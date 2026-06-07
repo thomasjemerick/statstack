@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>StatStack</title>
+<title>StatStack — Build a lineup. Hit exactly 100 PPG.</title>
 
 <!-- Distinctive type pairing per spec: Barlow Condensed (display/numbers) + DM Mono (labels) -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -562,6 +562,64 @@ body::after{ /* vignette */
   .mode-card .mc-icon{ margin-bottom:10px; font-size:26px; }
   .mode-card .mc-label{ font-size:26px; }
 }
+
+/* ======================================================
+   v2 — share message, daily-done, leaderboard, Hall of Fame
+   ====================================================== */
+.archive-link{ margin:5px 5px 0; }
+
+/* Optional share message input on the result screen */
+.share-msg-wrap{ max-width:620px; margin:22px auto 0; }
+.share-msg{
+  width:100%; background:var(--panel); color:var(--text);
+  border:1px solid var(--line); border-radius:var(--radius);
+  font-family:"DM Mono",monospace; font-size:13px; padding:12px 14px;
+  letter-spacing:.02em; transition:border-color .2s, box-shadow .2s;
+}
+.share-msg::placeholder{ color:var(--muted); }
+.share-msg:focus{ outline:none; border-color:var(--gold-dim); box-shadow:0 0 0 3px rgba(232,184,75,.12); }
+
+/* Daily-completed modal */
+.dd-score-row{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-top:18px; flex-wrap:wrap; }
+.dd-score{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:56px; line-height:.85; color:var(--gold); font-variant-numeric:tabular-nums; text-shadow:0 0 26px var(--gold-glow); }
+.dd-score .dd-of{ font-size:.34em; color:var(--muted); font-weight:700; }
+.dd-resultlabel{ font-family:"DM Mono",monospace; font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted-2); }
+.dd-picks{ margin-top:18px; display:flex; flex-direction:column; gap:6px; }
+.dd-pick{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:9px 12px;
+}
+.dd-pick span{ font-family:"Barlow Condensed",sans-serif; font-weight:600; font-size:15px; color:var(--text); min-width:0; }
+.dd-pick b{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:18px; color:var(--gold); flex:0 0 auto; }
+.dd-actions{ display:flex; flex-direction:column; gap:9px; margin-top:22px; }
+.dd-actions .btn-line{ min-width:0; font-size:16px; }
+
+/* Leaderboard list */
+.lb-list{ margin-top:16px; display:flex; flex-direction:column; gap:6px; }
+.lb-row{
+  display:flex; align-items:center; gap:12px; padding:11px 13px;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+}
+.lb-rank{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:22px; color:var(--gold-dim); width:30px; flex:0 0 auto; text-align:center; }
+.lb-mid{ flex:1; min-width:0; }
+.lb-total{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:22px; line-height:1; color:var(--gold); font-variant-numeric:tabular-nums; }
+.lb-total span{ font-size:.5em; color:var(--muted); font-weight:700; }
+.lb-prev{ font-size:11px; color:var(--muted-2); letter-spacing:.03em; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lb-res{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted-2); flex:0 0 auto; text-align:right; max-width:96px; }
+
+/* Hall of Fame list */
+.hof-list{ margin-top:16px; display:flex; flex-direction:column; gap:6px; }
+.hof-row{
+  display:flex; align-items:center; gap:12px; padding:11px 13px;
+  background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:var(--radius);
+}
+.hof-mode{ font-family:"DM Mono",monospace; font-size:10px; letter-spacing:.16em; color:var(--muted-2); width:74px; flex:0 0 auto; }
+.hof-mid{ flex:1; min-width:0; }
+.hof-prev{ font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:16px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hof-date{ font-size:10px; color:var(--muted); letter-spacing:.06em; margin-top:2px; }
+.hof-total{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:22px; color:var(--gold); font-variant-numeric:tabular-nums; flex:0 0 auto; }
+.hof-link{ font-family:"DM Mono",monospace; font-size:11px; letter-spacing:.08em; color:var(--gold-dim); text-decoration:none; flex:0 0 auto; }
+.hof-link:hover{ color:var(--gold); }
 </style>
 </head>
 <body>
@@ -614,6 +672,7 @@ body::after{ /* vignette */
 
     <div class="archive-link-wrap">
       <button class="archive-link" id="archiveBtn">📅 Past Puzzles</button>
+      <button class="archive-link" id="hofBtn">🏆 Hall of Fame</button>
     </div>
 
     <div class="howto-wrap">
@@ -713,9 +772,15 @@ body::after{ /* vignette */
       <div id="lineup"></div>
     </div>
 
+    <div id="shareMsgWrap" class="share-msg-wrap">
+      <input id="shareMsg" class="share-msg" type="text" maxlength="120"
+             autocomplete="off" placeholder="Add a message to your share..." />
+    </div>
+
     <div class="result-actions">
       <button id="copyBtn" class="btn btn-line">Copy result</button>
       <button id="shareBtn" class="btn btn-line">🔗 Share</button>
+      <button id="leaderboardBtn" class="btn btn-line" style="display:none">🏆 Leaderboard</button>
       <button id="resultHomeBtn" class="btn btn-line">Home</button>
       <button id="againBtn" class="btn btn-line primary">Play again</button>
     </div>
@@ -779,6 +844,45 @@ body::after{ /* vignette */
   </div>
 </div>
 
+<!-- ========== Daily already-completed modal ========== -->
+<div class="modal-overlay" id="dailyDoneModal">
+  <div class="modal-card ticked">
+    <button class="modal-close" id="ddClose" aria-label="Close">✕</button>
+    <h2>Daily complete</h2>
+    <div class="modal-sub">Your first attempt is locked for today</div>
+    <div class="dd-score-row">
+      <div class="dd-score"><span id="ddScore">0.0</span><span class="dd-of"> / 100</span></div>
+      <div class="dd-resultlabel" id="ddResult">—</div>
+    </div>
+    <div class="dd-picks" id="ddPicks"></div>
+    <div class="dd-actions">
+      <button class="btn btn-line" id="ddLeaderboard">🏆 View Leaderboard</button>
+      <button class="btn btn-line" id="ddPractice">↻ Practice Today's Puzzle</button>
+      <button class="btn btn-line" id="ddHome">⌂ Home</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Daily leaderboard modal ========== -->
+<div class="modal-overlay" id="leaderboardModal">
+  <div class="modal-card ticked">
+    <button class="modal-close" id="lbClose" aria-label="Close">✕</button>
+    <h2>Leaderboard</h2>
+    <div class="modal-sub" id="lbSub">Daily</div>
+    <div class="lb-list" id="lbList"></div>
+  </div>
+</div>
+
+<!-- ========== Hall of Fame modal ========== -->
+<div class="modal-overlay" id="hofModal">
+  <div class="modal-card ticked">
+    <button class="modal-close" id="hofClose" aria-label="Close">✕</button>
+    <h2>🏆 Hall of Fame</h2>
+    <div class="modal-sub">Every perfect 100.0</div>
+    <div class="hof-list" id="hofList"></div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    StatStack — game logic
@@ -835,19 +939,81 @@ function decadeIncluded(label){ return !nightmareDecadesExcluded.has(decadeOf(la
 /* ---- Daily archive ---- */
 const ARCHIVE_START = "2026-05-01";
 
-/* ---- Silent pick logging (fire-and-forget; never affects gameplay) ---- */
+/* ============================================================
+   SUPABASE (v2 backend) — every call fails silently / warns only.
+   No network failure may affect gameplay.
+   ============================================================ */
+const SUPABASE_URL = "https://sqbpnodedbipbstdizis.supabase.co";
+const SUPABASE_ANON_KEY = "PASTE_ANON_KEY_HERE";
+
+async function supabaseInsert(table, data){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify(data)
+    });
+    if(!res.ok){ console.warn(`Supabase insert failed: ${table}`, res.status, await res.text()); return null; }
+    const json = await res.json();
+    return Array.isArray(json) ? json[0] : json;
+  }catch(e){ console.warn(`Supabase insert error: ${table}`, e); return null; }
+}
+
+async function supabaseSelect(table, query = ""){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
+      method: "GET",
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+      }
+    });
+    if(!res.ok){ console.warn(`Supabase select failed: ${table}`, res.status, await res.text()); return []; }
+    return await res.json();
+  }catch(e){ console.warn(`Supabase select error: ${table}`, e); return []; }
+}
+
+async function supabaseUpdate(table, matchColumn, matchValue, data){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${matchColumn}=eq.${encodeURIComponent(matchValue)}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify(data)
+    });
+    if(!res.ok){ console.warn(`Supabase update failed: ${table}`, res.status, await res.text()); }
+  }catch(e){ console.warn(`Supabase update error: ${table}`, e); }
+}
+
+/* ---- Session id (kept from v1) ---- */
 const SESSION_ID = (window.crypto && crypto.randomUUID)
   ? crypto.randomUUID()
   : ("sess-" + Date.now() + "-" + Math.random().toString(16).slice(2));
 
+/* Change 1: pick logging → Supabase `picks` table (fire-and-forget) */
 async function logPick(data){
   try{
-    await fetch('/api/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/picks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Prefer": "return=minimal"
+      },
       body: JSON.stringify(data)
     });
-  }catch(e){ /* silent fail — endpoint may 404 locally */ }
+    if(!res.ok){ console.warn("logPick failed", res.status, await res.text()); }
+  }catch(e){ console.warn("logPick error", e); }
 }
 
 /* Change 3: Daily seed keyed to the UTC date so the puzzle is global; resets at midnight UTC */
@@ -924,6 +1090,10 @@ function freshState(){
     decadesExcluded:new Set(),// nightmare: decades excluded this game
     lifelineUsed:false,      // nightmare: reveal-players used this game
     assistActive:false,      // nightmare: lifeline active for the current round
+    dailyEligible:false,     // daily: this completion may post to the leaderboard
+    shareCode:null,          // short Supabase share code for this game
+    isSharedView:false,      // viewing a read-only shared result
+    loadedMessage:"",        // shared view: the sharer's message
     finished:false
   };
 }
@@ -940,7 +1110,7 @@ async function init(){
     // small settle so the spinner isn't a jarring flash
     const sharedCode = getSharedCodeFromPath();
     setTimeout(() => {
-      if(sharedCode && renderSharedResult(sharedCode)) return;
+      if(sharedCode){ loadSharedResult(sharedCode); return; }
       showScreen("start");
     }, 250);
   }catch(err){
@@ -1003,8 +1173,10 @@ function startGame(mode, opts){
     state.isArchive  = !!opts.isArchive;
     const existing = readDaily(state.puzzleDate);
     state.attemptNumber  = ((existing && existing.attempts) ? existing.attempts : 0) + 1;
-    state.isPractice     = state.attemptNumber > 1;
+    state.isPractice     = !!opts.isPractice || state.attemptNumber > 1;
     state.dailyFirstScore= existing ? existing.firstScore : null;
+    // Only a first, live (non-archive, non-practice) attempt is leaderboard-eligible
+    state.dailyEligible  = !state.isArchive && !state.isPractice && !existing;
     // deterministic, shared board seeded from the puzzle date
     const rnd = seededRandom(hashSeed(state.puzzleDate));
     state.dailyTeams = seededShuffle(TEAMS.filter(t => playersByTeam.has(t)), rnd).slice(0, 5);
@@ -1525,7 +1697,72 @@ function endGame(){
   renderLineup(culpritIdx);
   showScreen("result");
 
+  // v2: normal completion result-screen chrome
+  setShareView(false);
+  if($("shareMsg")) $("shareMsg").value = "";
+  const lbBtn = $("leaderboardBtn");
+  if(lbBtn) lbBtn.style.display = (currentMode === "daily") ? "" : "none";
+
+  // Changes 2/4/5: persist this completion to Supabase (silent)
+  submitCompletion();
+
   if(kind === "perfect") launchConfetti();
+
+  // Change 3: surface the Daily leaderboard right after a live first attempt
+  if(state.dailyEligible){
+    const pd = state.puzzleDate;
+    setTimeout(() => { if(state && state.puzzleDate === pd && screens.result.classList.contains("active")) openLeaderboard(pd); }, 900);
+  }
+}
+
+/* Changes 2/4/5: write completion records to Supabase (all silent / non-blocking). */
+function submitCompletion(){
+  if(!state || state.isSharedView) return;
+  const t = state.totalTenths;
+  const finalTotal  = +(t/10).toFixed(1);
+  const finalResult = dailyResultKey(t);
+  const code = generateShareCode();
+  state.shareCode = code;
+
+  // Change 5: every completed game → shared_results
+  supabaseInsert("shared_results", {
+    share_code: code,
+    mode: currentMode,
+    puzzle_date: state.puzzleDate || null,
+    total: finalTotal,
+    result: finalResult,
+    lineup_json: state.picks,
+    user_message: null
+  });
+
+  // Change 4: exact 100.0 only → perfect_games
+  if(t === 1000){
+    supabaseInsert("perfect_games", {
+      mode: currentMode,
+      puzzle_date: state.puzzleDate || null,
+      session_id: SESSION_ID,
+      total: finalTotal,
+      result: "perfect",
+      lineup_json: state.picks,
+      share_code: code
+    });
+  }
+
+  // Change 2/3: first live Daily attempt only → daily_results (leaderboard)
+  if(state.dailyEligible){
+    supabaseInsert("daily_results", {
+      puzzle_date: state.puzzleDate,
+      session_id: SESSION_ID,
+      total: finalTotal,
+      result: finalResult,
+      lineup_json: state.picks,
+      share_code: code
+    });
+  }
+}
+
+function generateShareCode(){
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
 // classify a final total into the stored Daily result bucket
@@ -1592,34 +1829,64 @@ function renderLineup(culpritIdx){
   }
 }
 
-/* Render a shared completed lineup from a URL code. */
-function renderSharedResult(code){
-  const data = decodeSharePayload(code);
-  if(!data || data.v !== 1 || !Array.isArray(data.p) || !data.p.length) return false;
+/* ---- Change 6: read-only shared result page (Supabase-backed) ---- */
+async function loadSharedResult(code){
+  // show a loading frame on the result screen
+  setShareView(true);
+  $("dailyBanner").style.display = "none";
+  $("modeLabel").textContent = "Shared result";
+  const vEl = $("verdict"); vEl.textContent = "…"; vEl.className = "verdict display";
+  $("verdictSub").textContent = "Loading shared result…";
+  $("finalTotal").innerHTML = "";
+  $("lineup").innerHTML = "";
+  showScreen("result");
 
-  currentMode = data.m || "casual";
+  const rows = await supabaseSelect("shared_results", `?share_code=eq.${encodeURIComponent(code)}&limit=1&select=*`);
+  if(rows && rows.length){ renderSharedResultData(rows[0]); }
+  else { showSharedNotFound(); }
+}
+
+function showSharedNotFound(){
+  setShareView(true);
+  $("dailyBanner").style.display = "none";
+  $("modeLabel").textContent = "Shared result";
+  const vEl = $("verdict"); vEl.textContent = "NOT FOUND"; vEl.className = "verdict display v-loss";
+  $("verdictSub").textContent = "Shared result not found.";
+  $("finalTotal").innerHTML = "";
+  $("lineup").innerHTML = "";
+  showScreen("result");
+}
+
+// Render a read-only completed lineup from a Supabase shared_results row.
+function renderSharedResultData(rec){
+  currentMode = rec.mode || "casual";
   state = freshState();
   state.finished = true;
-  state.totalTenths = Number(data.t) || Math.round(data.p.reduce((sum,p) => sum + Number(p.ppg || 0), 0) * 10);
-  state.puzzleDate = data.pd || null;
-  state.isArchive = !!data.ar;
-  state.lifelineUsed = !!data.lf;
-  state.decadesExcluded = new Set(Array.isArray(data.de) ? data.de : []);
-  state.picks = data.p.map(p => ({
+  state.isSharedView = true;
+  state.puzzleDate = rec.puzzle_date || null;
+  state.isArchive = false;
+  state.loadedMessage = rec.user_message || "";
+
+  let lineup = rec.lineup_json;
+  if(typeof lineup === "string"){ try{ lineup = JSON.parse(lineup); }catch(e){ lineup = []; } }
+  lineup = Array.isArray(lineup) ? lineup : [];
+  state.picks = lineup.map(p => ({
     pid:String(p.pid || ""),
-    name:p.n || "Unknown Player",
-    abv:p.a || "",
-    seasonLabel:p.s || "",
-    seasonId:p.sid || "",
+    name:p.name || p.n || "Unknown Player",
+    abv:p.abv || p.a || "",
+    seasonLabel:p.seasonLabel || p.s || "",
+    seasonId:p.seasonId || p.sid || "",
     ppg:Number(p.ppg || 0),
     gp:p.gp || null,
-    color:TEAM_COLORS[p.a] || "#e8b84b",
-    assist:!!p.as
+    color:TEAM_COLORS[p.abv || p.a] || "#e8b84b",
+    assist:!!(p.assist || p.as)
   }));
+  state.totalTenths = (rec.total != null)
+    ? Math.round(Number(rec.total) * 10)
+    : Math.round(state.picks.reduce((sum,p) => sum + Number(p.ppg || 0), 0) * 10);
 
-  $("dailyBanner").style.display = "none";
   $("modeLabel").textContent =
-    currentMode === "daily"     ? (state.isArchive ? "Shared Daily — Archive" : "Shared Daily") :
+    currentMode === "daily"     ? "Shared Daily" :
     currentMode === "standard"  ? "Shared Standard" :
     currentMode === "nightmare" ? "Shared Nightmare" :
                                   "Shared Casual";
@@ -1630,11 +1897,8 @@ function renderSharedResult(code){
     kind = "perfect"; verdict = "PERFECT"; sub = "Exactly 100.0. A flawless lineup.";
   }else if(t > 1000){
     culpritIdx = state.picks.length - 1;
-    if(t <= 1020){
-      kind = "close"; verdict = "SO CLOSE"; sub = "Just over by " + ((t-1000)/10).toFixed(1) + " PPG.";
-    }else{
-      kind = "bust"; verdict = "BUST"; sub = "Over 100 — busted by " + ((t-1000)/10).toFixed(1) + " PPG.";
-    }
+    if(t <= 1020){ kind = "close"; verdict = "SO CLOSE"; sub = "Just over by " + ((t-1000)/10).toFixed(1) + " PPG."; }
+    else{ kind = "bust"; verdict = "BUST"; sub = "Over 100 — busted by " + ((t-1000)/10).toFixed(1) + " PPG."; }
   }else{
     if(t >= 980){ kind = "close"; verdict = "SO CLOSE"; sub = "Just short — " + ((1000-t)/10).toFixed(1) + " PPG away."; }
     else{ kind = "loss"; verdict = "UNDER"; sub = "Finished " + ((1000-t)/10).toFixed(1) + " PPG short of 100."; }
@@ -1647,8 +1911,14 @@ function renderSharedResult(code){
   $("finalTotal").innerHTML = (t/10).toFixed(1) + '<span class="of"> / 100</span>';
   $("finalTotal").className = "final-total display" + (t > 1000 ? " over" : (t === 1000 ? " win" : ""));
   renderLineup(culpritIdx);
+
+  // surface the sharer's optional message
+  const banner = $("dailyBanner");
+  if(state.loadedMessage){ banner.textContent = "💬 " + state.loadedMessage; banner.style.display = "block"; }
+  else{ banner.style.display = "none"; }
+
+  setShareView(true);
   showScreen("result");
-  return true;
 }
 
 /* ---- Copyable result text (mode-aware) ---- */
@@ -1717,9 +1987,10 @@ function buildShareText(){
 }
 
 function copyResult(){
-  const text = buildShareText();
+  const msg = currentShareMessage();
+  const text = (msg ? msg + "\n\n" : "") + buildShareText();
   const toast = $("copiedToast");
-  const done = () => { toast.classList.add("show"); setTimeout(() => toast.classList.remove("show"), 1600); };
+  const done = () => { toast.textContent = "Copied to clipboard"; toast.classList.add("show"); setTimeout(() => toast.classList.remove("show"), 1600); };
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
   }else{
@@ -1734,67 +2005,62 @@ function fallbackCopy(text, done){
   document.body.removeChild(ta);
 }
 
-/* Share URL: embeds the completed lineup in a compact URL code.
-   For production on a static host, add a rewrite so /{code} serves index.html. */
-function encodeSharePayload(payload){
-  const json = JSON.stringify(payload);
-  const bytes = new TextEncoder().encode(json);
-  let bin = "";
-  bytes.forEach(b => { bin += String.fromCharCode(b); });
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-function decodeSharePayload(code){
-  try{
-    let b64 = String(code || "").replace(/-/g, "+").replace(/_/g, "/");
-    while(b64.length % 4) b64 += "=";
-    const bin = atob(b64);
-    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-    return JSON.parse(new TextDecoder().decode(bytes));
-  }catch(e){ return null; }
-}
-function buildShareCode(){
-  if(!state || !state.picks || !state.picks.length) return null;
-  return encodeSharePayload({
-    v:1,
-    m:currentMode,
-    t:state.totalTenths,
-    pd:state.puzzleDate || null,
-    ar:!!state.isArchive,
-    de:currentMode === "nightmare" ? [...state.decadesExcluded] : [],
-    lf:!!state.lifelineUsed,
-    p:state.picks.map(p => ({
-      pid:p.pid, n:p.name, a:p.abv, s:p.seasonLabel, sid:p.seasonId,
-      ppg:+p.ppg.toFixed(1), gp:p.gp || null, as:!!p.assist
-    }))
-  });
-}
+/* ---- Change 6: detect a /r/{share_code} read-only path ---- */
 function getSharedCodeFromPath(){
-  const raw = window.location.pathname.replace(/^\/+|\/+$/g, "");
-  if(!raw || raw === "index.html" || raw.includes(".")) return null;
-  return raw;
+  const m = window.location.pathname.match(/\/r\/([^\/?#]+)/);
+  return m ? m[1] : null;
 }
+
+/* ---- Change 5/7: share URL points at the Supabase-backed result ---- */
 function getShareUrl(challengeCode = null){
-  if(challengeCode) return `https://playstatstack.com/${challengeCode}`;
+  if(challengeCode) return `https://playstatstack.com/r/${challengeCode}`;
+  if(state && state.shareCode) return `https://playstatstack.com/r/${state.shareCode}`;
   return "https://playstatstack.com";
 }
+
+/* ---- Change 8: the optional share message (input on live result, stored value on shared view) ---- */
+function currentShareMessage(){
+  if(state && state.isSharedView) return state.loadedMessage || "";
+  const el = $("shareMsg");
+  return el ? el.value.trim() : "";
+}
+
+/* ---- Change 7/8: share button — includes /r/{code} URL and optional message ---- */
 function shareResult(){
-  const text = buildShareText();
-  const code = buildShareCode();
-  const url  = getShareUrl(code);
+  const msg  = currentShareMessage();
+  const text = (msg ? msg + "\n\n" : "") + buildShareText();
+  const url  = getShareUrl();   // /r/{shareCode} if available, else homepage
   const toast = $("copiedToast");
   const flash = () => { toast.textContent = "Copied!"; toast.classList.add("show"); setTimeout(() => toast.classList.remove("show"), 1600); };
+
+  // Change 8: persist the message onto the shared record (silent; never blocks)
+  if(msg && state && state.shareCode){
+    supabaseUpdate("shared_results", "share_code", state.shareCode, { user_message: msg });
+  }
+
   // Mobile / supported browsers: native share sheet
   if(navigator.share){
     navigator.share({ title: "StatStack", text: text, url: url }).catch(() => {});
     return;
   }
   // Desktop: copy text + URL to clipboard
-  const payload = text + "\n" + url;
+  const payload = text + "\n\n" + url;
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(payload).then(flash).catch(() => fallbackCopy(payload, flash));
   }else{
     fallbackCopy(payload, flash);
   }
+}
+
+/* ---- Toggle result-screen actions between a live game and a read-only shared view ---- */
+function setShareView(isShared){
+  const share = $("shareBtn"), again = $("againBtn"), lb = $("leaderboardBtn"),
+        msg = $("shareMsgWrap"), home = $("resultHomeBtn");
+  if(share) share.style.display = isShared ? "none" : "";
+  if(again) again.style.display = isShared ? "none" : "";
+  if(lb)    lb.style.display    = "none";   // re-shown by endGame for live Daily
+  if(msg)   msg.style.display   = isShared ? "none" : "";
+  if(home)  home.textContent    = isShared ? "Play StatStack" : "Home";
 }
 
 /* ============================================================
@@ -1988,6 +2254,107 @@ function renderArchive(){
 function openArchive(){ renderArchive(); $("archiveModal").classList.add("show"); }
 function closeArchive(){ $("archiveModal").classList.remove("show"); }
 
+/* ---- Change 2: live Daily gate + "already completed" modal ---- */
+let dailyDoneDate = null;
+
+function resultLabel(key){
+  return ({ perfect:"Perfect 100!", bust:"Bust — over 100", over:"Just over 100", under:"Under 100" })[key] || String(key || "—");
+}
+
+function onDailyClick(){
+  const today = getDailySeed();
+  const existing = readDaily(today);
+  if(existing){ showDailyCompleted(existing, today); }   // first attempt already locked
+  else{ startGame("daily"); }                            // canonical first attempt
+}
+
+function showDailyCompleted(rec, date){
+  dailyDoneDate = date;
+  $("ddScore").textContent  = Number(rec.firstScore).toFixed(1);
+  $("ddResult").textContent = resultLabel(rec.result);
+  const picks = Array.isArray(rec.picks) ? rec.picks : [];
+  $("ddPicks").innerHTML = picks.map((p,i) =>
+    '<div class="dd-pick"><span>' + (i+1) + '. ' + escapeHtml(p.name) + ' · ' + escapeHtml(p.abv) + ' ' + escapeHtml(p.season) + '</span>' +
+    '<b>' + Number(p.ppg).toFixed(1) + '</b></div>'
+  ).join("");
+  $("dailyDoneModal").classList.add("show");
+}
+function closeDailyDone(){ $("dailyDoneModal").classList.remove("show"); }
+
+/* ---- Change 3: Daily leaderboard ---- */
+function lineupPreview(lineup){
+  let arr = lineup;
+  if(typeof arr === "string"){ try{ arr = JSON.parse(arr); }catch(e){ arr = []; } }
+  if(!Array.isArray(arr) || !arr.length) return "—";
+  const lasts = arr.map(p => {
+    const n = String(p && (p.name || p.n) || "").trim();
+    const parts = n.split(/\s+/);
+    return parts[parts.length - 1] || n;
+  });
+  return lasts.slice(0,3).join(" · ") + (lasts.length > 3 ? "..." : "");
+}
+
+async function openLeaderboard(date){
+  $("lbSub").textContent = "Daily · " + formatPuzzleDate(date);
+  $("lbList").innerHTML = '<div class="noresults">Loading leaderboard…</div>';
+  $("leaderboardModal").classList.add("show");
+  const rows = await supabaseSelect("daily_results", `?puzzle_date=eq.${encodeURIComponent(date)}&select=*`);
+  renderLeaderboard(rows);
+}
+function closeLeaderboard(){ $("leaderboardModal").classList.remove("show"); }
+
+function renderLeaderboard(rows){
+  const list = $("lbList");
+  if(!rows || !rows.length){ list.innerHTML = '<div class="noresults">No leaderboard entries yet.</div>'; return; }
+  rows = rows.slice().sort((a,b) => {
+    const ap = Number(a.total) === 100, bp = Number(b.total) === 100;
+    if(ap !== bp) return ap ? -1 : 1;                       // exact 100 first
+    const ad = Math.abs(100 - Number(a.total)), bd = Math.abs(100 - Number(b.total));
+    if(ad !== bd) return ad - bd;                           // closest to 100
+    return new Date(a.created_at || 0) - new Date(b.created_at || 0);  // earliest first
+  });
+  list.innerHTML = rows.map((r,i) =>
+    '<div class="lb-row">' +
+      '<div class="lb-rank">' + (i+1) + '</div>' +
+      '<div class="lb-mid">' +
+        '<div class="lb-total">' + Number(r.total).toFixed(1) + '<span> / 100</span></div>' +
+        '<div class="lb-prev">' + escapeHtml(lineupPreview(r.lineup_json)) + '</div>' +
+      '</div>' +
+      '<div class="lb-res">' + escapeHtml(resultLabel(r.result)) + '</div>' +
+    '</div>'
+  ).join("");
+}
+
+/* ---- Change 4: Hall of Fame ---- */
+async function openHallOfFame(){
+  $("hofList").innerHTML = '<div class="noresults">Loading Hall of Fame…</div>';
+  $("hofModal").classList.add("show");
+  const rows = await supabaseSelect("perfect_games", "?select=*&order=created_at.desc&limit=100");
+  renderHallOfFame(rows);
+}
+function closeHallOfFame(){ $("hofModal").classList.remove("show"); }
+
+function renderHallOfFame(rows){
+  const list = $("hofList");
+  if(!rows || !rows.length){ list.innerHTML = '<div class="noresults">No perfect 100s recorded yet.</div>'; return; }
+  list.innerHTML = rows.map(r => {
+    const date = r.puzzle_date ? formatPuzzleDate(r.puzzle_date)
+               : (r.created_at ? String(r.created_at).slice(0,10) : "—");
+    const link = r.share_code
+      ? '<a class="hof-link" href="' + getShareUrl(r.share_code) + '" target="_blank" rel="noopener">view →</a>'
+      : '';
+    return '<div class="hof-row">' +
+      '<div class="hof-mode">' + escapeHtml(String(r.mode || "").toUpperCase()) + '</div>' +
+      '<div class="hof-mid">' +
+        '<div class="hof-prev">' + escapeHtml(lineupPreview(r.lineup_json)) + '</div>' +
+        '<div class="hof-date">' + escapeHtml(date) + '</div>' +
+      '</div>' +
+      '<div class="hof-total">' + Number(r.total).toFixed(1) + '</div>' +
+      link +
+    '</div>';
+  }).join("");
+}
+
 /* ---- Play again: preserve mode (and Daily puzzle/archive) ---- */
 function playAgain(){
   if(currentMode === "daily"){
@@ -2005,7 +2372,7 @@ function playAgain(){
 // Home-screen mode cards
 $("modeCasual").addEventListener("click",    () => startGame("casual"));
 $("modeStandard").addEventListener("click",  () => startGame("standard"));
-$("modeDaily").addEventListener("click",     () => startGame("daily"));
+$("modeDaily").addEventListener("click",     onDailyClick);   // gate if already played today
 $("modeNightmare").addEventListener("click", showDecadeScreen);   // decade chooser first
 
 // How-to modal
@@ -2013,13 +2380,30 @@ $("howToBtn").addEventListener("click", openModal);
 $("modalClose").addEventListener("click", closeModal);
 $("howToModal").addEventListener("click", e => { if(e.target === $("howToModal")) closeModal(); });
 document.addEventListener("keydown", e => {
-  if(e.key === "Escape"){ closeModal(); closeArchive(); }
+  if(e.key === "Escape"){ closeModal(); closeArchive(); closeHallOfFame(); closeLeaderboard(); closeDailyDone(); }
 });
 
 // Past-puzzles archive
 $("archiveBtn").addEventListener("click", openArchive);
 $("archiveClose").addEventListener("click", closeArchive);
 $("archiveModal").addEventListener("click", e => { if(e.target === $("archiveModal")) closeArchive(); });
+
+// Hall of Fame (home)
+$("hofBtn").addEventListener("click", openHallOfFame);
+$("hofClose").addEventListener("click", closeHallOfFame);
+$("hofModal").addEventListener("click", e => { if(e.target === $("hofModal")) closeHallOfFame(); });
+
+// Daily leaderboard
+$("leaderboardBtn").addEventListener("click", () => { if(state && state.puzzleDate) openLeaderboard(state.puzzleDate); });
+$("lbClose").addEventListener("click", closeLeaderboard);
+$("leaderboardModal").addEventListener("click", e => { if(e.target === $("leaderboardModal")) closeLeaderboard(); });
+
+// Daily-completed modal
+$("ddClose").addEventListener("click", closeDailyDone);
+$("dailyDoneModal").addEventListener("click", e => { if(e.target === $("dailyDoneModal")) closeDailyDone(); });
+$("ddLeaderboard").addEventListener("click", () => { closeDailyDone(); if(dailyDoneDate) openLeaderboard(dailyDoneDate); });
+$("ddPractice").addEventListener("click", () => { closeDailyDone(); if(dailyDoneDate) startGame("daily", { puzzleDate: dailyDoneDate, isPractice: true }); });
+$("ddHome").addEventListener("click", closeDailyDone);
 
 // Decade chooser screen
 $("decadeHome").addEventListener("click", () => showScreen("start"));
