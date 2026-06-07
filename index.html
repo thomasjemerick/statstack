@@ -2460,7 +2460,7 @@ function renderLeaderboard(rows){
   rows = Array.isArray(rows) ? rows : [];
   // Change 3: require >= 10 unique session_ids before revealing rankings
   const uniqueSessions = new Set(rows.map(r => r.session_id).filter(Boolean));
-  if(uniqueSessions.size < 10){
+  if(uniqueSessions.size < 1){
     list.innerHTML = '<div class="lb-locked"><div class="lb-locked-title">🏆 Daily Leaderboard</div>' +
       '<div class="noresults">Leaderboard unlocks once enough players complete today\u2019s puzzle.</div></div>';
     return;
@@ -2496,7 +2496,7 @@ function closeHallOfFame(){ $("hofModal").classList.remove("show"); }
 function renderHallOfFame(rows){
   const list = $("hofList");
   rows = Array.isArray(rows) ? rows : [];
-  if(rows.length < 5){
+  if(rows.length < 1){
     list.innerHTML = '<div class="lb-locked"><div class="lb-locked-title">🏆 Hall of Fame</div>' +
       '<div class="noresults">Perfect 100s will appear here.</div></div>';
     return;
