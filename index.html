@@ -690,6 +690,126 @@ body::after{ /* vignette */
   .df-actions{ flex-direction:column; }
   .df-btn{ width:100%; text-align:center; }
 }
+
+/* ======================================================
+   v4 — headshots, H2H stacks, clickable leaderboard
+   ====================================================== */
+
+/* Player headshot avatars (graceful fallback to initials) */
+.hs-wrap{ position:relative; flex:0 0 auto; display:inline-block; }
+.hs{
+  width:40px; height:40px; flex:0 0 auto; border-radius:50%; object-fit:cover;
+  background:var(--panel-2); border:1px solid var(--line);
+}
+.hs.hs-sm{ width:32px; height:32px; }
+.hs-fallback{
+  display:grid; place-content:center; color:var(--gold);
+  font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:15px; letter-spacing:.02em;
+  background:var(--panel-2); border:1px solid var(--line);
+}
+.hs.hs-sm.hs-fallback{ font-size:12px; }
+
+/* Clickable leaderboard rows (Change 4.5) */
+.lb-row.clickable{ cursor:pointer; transition:border-color .15s, background .15s, transform .08s; }
+.lb-row.clickable:hover{ border-color:var(--gold-dim); background:var(--panel-2); }
+.lb-row.clickable:active{ transform:scale(.997); }
+
+/* HoF leading face */
+.hof-row .hs{ width:34px; height:34px; }
+
+/* H2H comparison stacks (Change 2) */
+.h2h-stacks{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:18px; }
+.h2h-stack{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px; }
+.h2h-stack-title{ font-family:"DM Mono",monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted-2); margin-bottom:10px; text-align:center; }
+.h2h-stack-row{ display:flex; align-items:center; gap:9px; padding:6px 0; border-bottom:1px solid var(--line-soft); }
+.h2h-stack-row:last-child{ border-bottom:0; }
+.h2h-sr-info{ flex:1; min-width:0; }
+.h2h-sr-name{ font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:15px; line-height:1; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.h2h-sr-meta{ font-size:10px; color:var(--muted-2); letter-spacing:.03em; margin-top:3px; }
+.h2h-sr-ppg{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:18px; color:var(--gold); flex:0 0 auto; font-variant-numeric:tabular-nums; }
+@media (max-width:560px){
+  .h2h-stacks{ grid-template-columns:1fr; }
+}
+
+/* ======================================================
+   v5 — HoF all-5 names, paired H2H matchup comparison
+   ====================================================== */
+
+/* Hall of Fame row: 5 tiny heads + all 5 names, never truncated */
+.hof-row{ align-items:flex-start; }
+.hof-heads{ display:flex; gap:3px; margin-bottom:6px; }
+.hof-heads .hs.hs-xs, .hs-xs{ width:24px; height:24px; }
+.hof-heads .hs.hs-xs.hs-fallback{ font-size:10px; }
+.hof-names{ font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:15px; line-height:1.25; color:var(--text); white-space:normal; word-break:break-word; }
+.hof-sub{ font-size:10px; color:var(--muted); letter-spacing:.08em; margin-top:4px; text-transform:uppercase; }
+.hof-right{ display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex:0 0 auto; }
+@media (max-width:560px){
+  .hof-heads{ display:none; }   /* names-only fallback on very small widths */
+}
+
+/* H2H paired matchup comparison (one row per pick) */
+.mu-rows{ margin-top:16px; display:flex; flex-direction:column; gap:10px; }
+.mu-row{ }
+.mu-pick{ font-family:"DM Mono",monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted-2); margin-bottom:5px; }
+.mu-pair{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.mu-card{
+  display:flex; align-items:center; gap:8px; min-width:0;
+  background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--line);
+  border-radius:var(--radius); padding:8px 10px;
+}
+.mu-card.empty{ justify-content:center; color:var(--muted); }
+.mu-card.hi{ border-color:var(--green); border-left-color:var(--green); box-shadow:0 0 0 1px rgba(47,210,138,.25) inset; }
+.mu-info{ flex:1; min-width:0; }
+.mu-name{ font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:15px; line-height:1; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mu-meta{ font-size:10px; color:var(--muted-2); letter-spacing:.03em; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mu-ppg{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:18px; color:var(--gold); flex:0 0 auto; font-variant-numeric:tabular-nums; }
+.mu-card.hi .mu-ppg{ color:var(--green); }
+@media (max-width:560px){
+  .mu-pair{ grid-template-columns:1fr; }   /* stack creator/opponent vertically per pick */
+}
+
+/* ======================================================
+   v6 — Hall of Fame compact rows (mockup target)
+   left: mode icon+label / date | center: 5 head+surname | right: score / view
+   ====================================================== */
+.hof-row{
+  display:flex; align-items:center; gap:16px;
+  padding:12px 16px;            /* ~45% shorter than the stacked-names layout */
+}
+.hof-left{ flex:0 0 auto; width:104px; }
+.hof-moderow{ display:flex; align-items:center; gap:7px; }
+.hof-ico{ font-size:15px; line-height:1; }
+.hof-mode-label{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:19px; letter-spacing:.04em; text-transform:uppercase; color:var(--text); }
+.hof-m-h2h{ color:#c79bff; }
+.hof-m-daily{ color:#29b6f6; }
+.hof-m-standard{ color:var(--green); }
+.hof-m-nightmare{ color:#ff5b5b; }
+.hof-m-casual{ color:var(--green); }
+.hof-date{ font-size:11px; color:var(--muted); letter-spacing:.05em; margin-top:5px; text-transform:none; }
+
+.hof-players{ flex:1; display:flex; justify-content:center; align-items:flex-start; gap:14px; flex-wrap:wrap; min-width:0; }
+.hof-player{ display:flex; flex-direction:column; align-items:center; gap:5px; width:62px; }
+.hof-player .hs.hs-xs, .hof-player .hs{ width:32px; height:32px; }
+.hof-player .hs.hs-xs.hs-fallback{ font-size:12px; }
+.hof-surname{ font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:14px; line-height:1.05; color:var(--text); text-align:center; white-space:normal; word-break:break-word; }
+
+.hof-right{ flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+.hof-total{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:30px; line-height:1; color:var(--gold); font-variant-numeric:tabular-nums; }
+.hof-link{ font-family:"DM Mono",monospace; font-size:12px; color:var(--gold); opacity:.85; text-decoration:none; letter-spacing:.04em; }
+.hof-link:hover{ opacity:1; text-decoration:underline; }
+
+@media (max-width:560px){
+  .hof-row{ gap:10px; padding:10px 12px; }
+  .hof-left{ width:74px; }
+  .hof-mode-label{ font-size:15px; }
+  .hof-date{ font-size:10px; }
+  .hof-players{ gap:8px; }
+  .hof-player{ width:50px; gap:4px; }
+  .hof-player .hs.hs-xs, .hof-player .hs{ width:20px; height:20px; }
+  .hof-surname{ font-size:11px; }
+  .hof-total{ font-size:24px; }
+  .hof-link{ font-size:11px; }
+}
 </style>
 </head>
 <body>
@@ -1134,10 +1254,22 @@ async function logPick(data){
   }catch(e){ console.warn("logPick error", e); }
 }
 
-/* Change 3: Daily seed keyed to the UTC date so the puzzle is global; resets at midnight UTC */
+/* Change 6: Daily seed keyed to the US Eastern calendar date.
+   Resets at midnight America/New_York and is identical for all users globally. */
+function getEasternDateParts(date = new Date()){
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const obj = {};
+  for(const p of parts){ if(p.type !== "literal") obj[p.type] = p.value; }
+  return { year: obj.year, month: obj.month, day: obj.day };
+}
 function getDailySeed(){
-  const d = new Date();
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+  const p = getEasternDateParts();
+  return `${p.year}-${p.month}-${p.day}`;
 }
 // string → 32-bit numeric seed (FNV-1a) for the deterministic RNG
 function hashSeed(str){
@@ -1217,6 +1349,9 @@ function freshState(){
     h2hSide:null,            // H2H: "creator" | "opponent"
     h2hChallengeCode:null,   // H2H: challenge code
     h2hChallengeRow:null,    // H2H: fetched challenge row (opponent)
+    h2hReadonly:false,       // H2H: viewing a completed matchup (read-only)
+    h2hCreatorTotal:null,    // H2H readonly: creator total (for share text)
+    h2hOpponentTotal:null,   // H2H readonly: opponent total (for share text)
     finished:false
   };
 }
@@ -1967,6 +2102,7 @@ function renderLineup(culpritIdx){
       row.style.borderLeftColor = (i === culpritIdx) ? "var(--danger)" : p.color;
       row.innerHTML =
         '<div class="lu-no">' + (i+1) + '</div>' +
+        headshotHTML(p) +
         '<div class="lu-info"><div class="n">' + escapeHtml(p.name) + '</div>' +
         '<div class="m">' + p.abv + ' · ' + p.seasonLabel +
           (i===culpritIdx ? ' · tipped over 100' : '') +
@@ -2295,6 +2431,66 @@ function normalizeName(str){
     .trim();
 }
 
+/* ---- Change 5: NBA player headshots (graceful fallback to initials) ---- */
+function playerHeadshotUrl(pick){
+  const id = pick && (pick.pid || pick.player_id || pick.id);
+  return id ? `https://cdn.nba.com/headshots/nba/latest/1040x760/${id}.png` : "";
+}
+function playerInitials(name){
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  if(!parts.length) return "?";
+  return ((parts[0][0] || "") + (parts.length > 1 ? parts[parts.length-1][0] : "")).toUpperCase();
+}
+// Returns avatar markup; if the CDN image 404s (older players), it hides and the initials show.
+function headshotHTML(pick, size){
+  const cls = "hs" + (size === "sm" ? " hs-sm" : size === "xs" ? " hs-xs" : "");
+  const url = playerHeadshotUrl(pick);
+  const initials = escapeHtml(playerInitials(pick && (pick.name || pick.n)));
+  if(!url) return '<span class="' + cls + ' hs-fallback">' + initials + '</span>';
+  return '<span class="hs-wrap"><img class="' + cls + '" src="' + url + '" alt="" loading="lazy" ' +
+    'onerror="this.style.display=&#39;none&#39;;this.nextElementSibling.style.display=&#39;grid&#39;;" />' +
+    '<span class="' + cls + ' hs-fallback" style="display:none">' + initials + '</span></span>';
+}
+// All five player names on one compact line (HoF rows).
+function lineupNamesLine(lineup){
+  const arr = lineupArr(lineup);
+  if(!arr.length) return "—";
+  return arr.map(p => escapeHtml(p.name || p.n || "—")).join(" · ");
+}
+// Tiny circular headshots for the five picks (HoF rows).
+function lineupHeadsHTML(lineup){
+  return lineupArr(lineup).map(p => headshotHTML(p, "xs")).join("");
+}
+// Surname only = full name minus the first token (keeps suffixes like "III" and hyphenated names).
+function playerSurname(name){
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  if(parts.length <= 1) return parts[0] || "—";
+  return parts.slice(1).join(" ");
+}
+// HoF center: five columns of (tiny headshot + surname), all five always shown.
+function hofPlayersHTML(lineup){
+  return lineupArr(lineup).map(p =>
+    '<div class="hof-player">' + headshotHTML(p, "xs") +
+    '<div class="hof-surname">' + escapeHtml(playerSurname(p.name || p.n)) + '</div></div>'
+  ).join("");
+}
+// HoF left: mode icon + label (+ colour class).
+function hofModeBadge(mode){
+  const m = String(mode || "").toLowerCase();
+  if(m === "h2h")       return { icon:"⚔️", label:"H2H",       cls:"hof-m-h2h" };
+  if(m === "daily")     return { icon:"📅", label:"Daily",     cls:"hof-m-daily" };
+  if(m === "standard")  return { icon:"🎯", label:"Standard",  cls:"hof-m-standard" };
+  if(m === "nightmare") return { icon:"🌙", label:"Nightmare", cls:"hof-m-nightmare" };
+  if(m === "casual")    return { icon:"🏀", label:"Casual",    cls:"hof-m-casual" };
+  return { icon:"🏆", label:(mode || "").toUpperCase(), cls:"" };
+}
+// Normalize a lineup_json value (array or JSON string) into an array.
+function lineupArr(lineup){
+  let a = lineup;
+  if(typeof a === "string"){ try{ a = JSON.parse(a); }catch(e){ a = []; } }
+  return Array.isArray(a) ? a : [];
+}
+
 /* ============================================================
    REVEAL FLASH (daily / nightmare) + HOME + MODAL
    ============================================================ */
@@ -2463,18 +2659,31 @@ function lineupPreview(lineup){
   return lasts.slice(0,3).join(" · ") + (lasts.length > 3 ? "..." : "");
 }
 
+/* ---- Change 4/4.5: confirm share_codes have a matching shared_results row (so links never 404) ---- */
+async function fetchValidShareCodes(codes){
+  const uniq = [...new Set((codes || []).filter(Boolean))];
+  if(!uniq.length) return new Set();
+  const inList = uniq.map(c => encodeURIComponent(c)).join(",");
+  const rows = await supabaseSelect("shared_results", `?share_code=in.(${inList})&select=share_code`);
+  const set = new Set();
+  (rows || []).forEach(r => { if(r && r.share_code) set.add(r.share_code); });
+  return set;
+}
+
 async function openLeaderboard(date){
   $("lbSub").textContent = "Daily · " + formatPuzzleDate(date);
   $("lbList").innerHTML = '<div class="noresults">Loading leaderboard…</div>';
   $("leaderboardModal").classList.add("show");
   const rows = await supabaseSelect("daily_results", `?puzzle_date=eq.${encodeURIComponent(date)}&select=*`);
-  renderLeaderboard(rows);
+  const valid = await fetchValidShareCodes((rows || []).map(r => r.share_code));
+  renderLeaderboard(rows, valid);
 }
 function closeLeaderboard(){ $("leaderboardModal").classList.remove("show"); }
 
-function renderLeaderboard(rows){
+function renderLeaderboard(rows, validCodes){
   const list = $("lbList");
   rows = Array.isArray(rows) ? rows : [];
+  validCodes = validCodes || new Set();
   // Change 3: require >= 10 unique session_ids before revealing rankings
   const uniqueSessions = new Set(rows.map(r => r.session_id).filter(Boolean));
   if(uniqueSessions.size < 1){
@@ -2489,16 +2698,27 @@ function renderLeaderboard(rows){
     if(ad !== bd) return ad - bd;                           // closest to 100
     return new Date(a.created_at || 0) - new Date(b.created_at || 0);  // earliest first
   });
-  list.innerHTML = rows.map((r,i) =>
-    '<div class="lb-row">' +
+  // Change 4.5: rows with a valid share_code link to the shared result page
+  list.innerHTML = rows.map((r,i) => {
+    const clickable = r.share_code && validCodes.has(r.share_code);
+    return '<div class="lb-row' + (clickable ? ' clickable" data-code="' + escapeHtml(r.share_code) + '"' : '"') + '>' +
       '<div class="lb-rank">' + (i+1) + '</div>' +
       '<div class="lb-mid">' +
         '<div class="lb-total">' + Number(r.total).toFixed(1) + '<span> / 100</span></div>' +
         '<div class="lb-prev">' + escapeHtml(lineupPreview(r.lineup_json)) + '</div>' +
       '</div>' +
-      '<div class="lb-res">' + escapeHtml(resultLabel(r.result)) + '</div>' +
-    '</div>'
-  ).join("");
+      '<div class="lb-res">' + escapeHtml(resultLabel(r.result)) + (clickable ? ' ›' : '') + '</div>' +
+    '</div>';
+  }).join("");
+  // wire clickable rows → open the shared result page
+  list.querySelectorAll(".lb-row.clickable").forEach(el => {
+    el.addEventListener("click", () => {
+      const code = el.getAttribute("data-code");
+      if(!code) return;
+      closeLeaderboard();
+      loadSharedResult(code);
+    });
+  });
 }
 
 /* ---- Change 4: Hall of Fame ---- */
@@ -2506,13 +2726,32 @@ async function openHallOfFame(){
   $("hofList").innerHTML = '<div class="noresults">Loading Hall of Fame…</div>';
   $("hofModal").classList.add("show");
   const rows = await supabaseSelect("perfect_games", "?select=*&order=created_at.desc&limit=100");
-  renderHallOfFame(rows);
+  const valid = await fetchValidShareCodes((rows || []).map(r => r.share_code));
+
+  // Change 8: repair perfect_games rows whose share_code has no shared_results row
+  const missing = (rows || []).filter(r => r.share_code && !valid.has(r.share_code));
+  if(missing.length){
+    await Promise.all(missing.map(async r => {
+      const res = await supabaseInsert("shared_results", {
+        share_code: r.share_code,
+        mode: r.mode || "h2h",
+        puzzle_date: r.puzzle_date || null,
+        total: Number(r.total),
+        result: r.result || "perfect",
+        lineup_json: r.lineup_json,
+        user_message: null
+      });
+      if(res) valid.add(r.share_code);   // repaired → link is safe to render
+    }));
+  }
+  renderHallOfFame(rows, valid);
 }
 function closeHallOfFame(){ $("hofModal").classList.remove("show"); }
 
-function renderHallOfFame(rows){
+function renderHallOfFame(rows, validCodes){
   const list = $("hofList");
   rows = Array.isArray(rows) ? rows : [];
+  validCodes = validCodes || new Set();
   if(rows.length < 1){
     list.innerHTML = '<div class="lb-locked"><div class="lb-locked-title">🏆 Hall of Fame</div>' +
       '<div class="noresults">Perfect 100s will appear here.</div></div>';
@@ -2521,17 +2760,22 @@ function renderHallOfFame(rows){
   list.innerHTML = rows.map(r => {
     const date = r.puzzle_date ? formatPuzzleDate(r.puzzle_date)
                : (r.created_at ? String(r.created_at).slice(0,10) : "—");
-    const link = r.share_code
+    // only render the /r/ link when a matching shared_results row exists
+    const link = (r.share_code && validCodes.has(r.share_code))
       ? '<a class="hof-link" href="' + getShareUrl(r.share_code) + '" target="_blank" rel="noopener">view →</a>'
       : '';
+    const badge = hofModeBadge(r.mode);
     return '<div class="hof-row">' +
-      '<div class="hof-mode">' + escapeHtml(String(r.mode || "").toUpperCase()) + '</div>' +
-      '<div class="hof-mid">' +
-        '<div class="hof-prev">' + escapeHtml(lineupPreview(r.lineup_json)) + '</div>' +
+      '<div class="hof-left">' +
+        '<div class="hof-moderow"><span class="hof-ico">' + badge.icon + '</span>' +
+          '<span class="hof-mode-label ' + badge.cls + '">' + escapeHtml(badge.label) + '</span></div>' +
         '<div class="hof-date">' + escapeHtml(date) + '</div>' +
       '</div>' +
-      '<div class="hof-total">' + Number(r.total).toFixed(1) + '</div>' +
-      link +
+      '<div class="hof-players">' + hofPlayersHTML(r.lineup_json) + '</div>' +
+      '<div class="hof-right">' +
+        '<div class="hof-total">' + Number(r.total).toFixed(1) + '</div>' +
+        link +
+      '</div>' +
     '</div>';
   }).join("");
 }
@@ -2632,12 +2876,55 @@ async function loadChallenge(code){
   const teams = Array.isArray(board.teams) ? board.teams : null;
   if(!teams || !teams.length){ showChallengeNotFound(); return; }
 
+  const creator  = parseJSONMaybe(row.creator_result_json);
+  const opponent = parseJSONMaybe(row.opponent_result_json);
+
+  // Change 3: both players done → persistent read-only matchup page (no replay)
+  if(creator && opponent){ renderCompletedMatchupPage(code, creator, opponent); return; }
+
+  // otherwise: let the visitor play as opponent (creator result shown in the intro if present)
   pendingChallenge = { code, row, teams };
-  const creator = parseJSONMaybe(row.creator_result_json);
   $("h2hIntroBody").innerHTML =
     '<p class="h2h-intro-line">A friend built this board' + (creator ? ' and scored <b>' + Number(creator.total).toFixed(1) + '</b>' : '') + '.</p>' +
     '<p class="h2h-intro-line">Play the <b>same 5 teams</b>. Closest to 100 wins. PPG stays hidden — no spoilers.</p>';
   $("h2hIntroModal").classList.add("show");
+}
+
+// Change 3/4: read-only completed matchup page reached via /c/{code} after both have played
+function renderCompletedMatchupPage(code, creator, opponent){
+  currentMode = "h2h";
+  state = freshState();
+  state.finished = true;
+  state.isSharedView = true;            // read-only — no logging / no replay
+  state.h2hChallengeCode = code;
+  state.h2hReadonly = true;
+  state.h2hCreatorTotal = Number(creator.total);
+  state.h2hOpponentTotal = Number(opponent.total);
+
+  $("dailyBanner").style.display = "none";
+  $("resultStreak").style.display = "none";
+  $("modeLabel").textContent = "H2H Challenge";
+
+  const w = h2hWinner(Number(creator.total), Number(opponent.total));
+  const vEl = $("verdict");
+  vEl.textContent = (w === "tie") ? "TIE" : "FINAL";
+  vEl.className = "verdict display " + ((w === "tie") ? "v-close" : "v-perfect");
+  $("verdictSub").textContent = "This challenge is complete.";
+  $("finalTotal").innerHTML = "";
+  $("lineup").innerHTML = "";
+
+  const box = $("h2hBox");
+  box.innerHTML = renderMatchupHTML(creator, opponent);
+  box.style.display = "block";
+
+  // chrome: read-only viewer can share the /c/ link or go home; no replay/leaderboard/message
+  setShareView(true);
+  $("shareBtn").style.display = "";  $("shareBtn").textContent = "🔗 Share Challenge";
+  $("copyBtn").style.display  = "";
+  $("rematchBtn").style.display = "none";
+  $("leaderboardBtn").style.display = "none";
+  $("againBtn").style.display = "none";
+  showScreen("result");
 }
 function startPendingChallenge(){
   if(!pendingChallenge) return;
@@ -2659,13 +2946,17 @@ function handleH2HCompletion(t){
   const total = +(t/10).toFixed(1);
   const myResult = { session_id:SESSION_ID, total, result:dailyResultKey(t), distance:+Math.abs(100-total).toFixed(1), lineup:state.picks };
 
+  // Change 3: an exact 100.0 in H2H enters the Hall of Fame (with a working /r/ link)
+  recordH2HPerfectIfNeeded(t);
+
   if(state.h2hSide === "opponent" && state.h2hChallengeCode){
     supabaseUpdate("challenges", "challenge_code", state.h2hChallengeCode, { opponent_result_json: myResult })
       .catch(() => {});
     const creator = parseJSONMaybe(state.h2hChallengeRow && state.h2hChallengeRow.creator_result_json);
     renderH2HResultBox(myResult, creator);
   }else{
-    const code = generateChallengeCode();
+    // Change 1: never regenerate a code once one exists for this game
+    const code = state.h2hChallengeCode || generateChallengeCode();
     state.h2hChallengeCode = code;
     const board = { type:"standard", teams: state.h2hBoard };
     supabaseInsert("challenges", {
@@ -2680,6 +2971,20 @@ function handleH2HCompletion(t){
     });
     renderH2HCreatorBox(myResult, code);
   }
+}
+
+/* Change 3: H2H perfect → perfect_games, backed by a real shared_results row so the HoF /r/ link works */
+function recordH2HPerfectIfNeeded(t){
+  if(t !== 1000) return;
+  const code = generateShareCode();
+  supabaseInsert("shared_results", {
+    share_code: code, mode: "h2h", puzzle_date: null,
+    total: 100.0, result: "perfect", lineup_json: state.picks, user_message: null
+  });
+  supabaseInsert("perfect_games", {
+    mode: "h2h", puzzle_date: null, session_id: SESSION_ID,
+    total: 100.0, result: "perfect", lineup_json: state.picks, share_code: code
+  });
 }
 function h2hActions(){
   $("shareBtn").style.display = ""; $("rematchBtn").style.display = "";
@@ -2696,18 +3001,58 @@ function renderH2HCreatorBox(mine, code){
   $("shareBtn").textContent = "🔗 Share Challenge";
   h2hActions();
 }
+// Change 4: one player's card inside a paired matchup row (headshot, name, team, season, PPG)
+function matchupCard(pick, hi){
+  if(!pick) return '<div class="mu-card empty">—</div>';
+  const name   = pick.name || pick.n || "Unknown Player";
+  const abv    = pick.abv || pick.a || "";
+  const season = pick.seasonLabel || pick.s || "";
+  const ppg    = Number(pick.ppg || 0).toFixed(1);
+  return '<div class="mu-card' + (hi ? ' hi' : '') + '">' +
+    headshotHTML(pick, "sm") +
+    '<div class="mu-info"><div class="mu-name">' + escapeHtml(name) + '</div>' +
+    '<div class="mu-meta">' + escapeHtml(abv) + (season ? ' · ' + escapeHtml(season) : '') + '</div></div>' +
+    '<div class="mu-ppg">' + ppg + '</div></div>';
+}
+
+// Change 4/5: full completed-matchup comparison (totals, winner, 5 paired rows).
+// Row highlight is purely a per-pick PPG comparison; the winner is still closeness to 100.
+function renderMatchupHTML(creatorRes, opponentRes){
+  const cL = lineupArr(creatorRes.lineup), oL = lineupArr(opponentRes.lineup);
+  const w  = h2hWinner(Number(creatorRes.total), Number(opponentRes.total));  // a=creator, b=opponent
+  const youCreator  = creatorRes.session_id  && creatorRes.session_id  === SESSION_ID;
+  const youOpponent = opponentRes.session_id && opponentRes.session_id === SESSION_ID;
+  const cLabel = "Creator"  + (youCreator  ? " (you)" : "");
+  const oLabel = "Opponent" + (youOpponent ? " (you)" : "");
+  const winTxt = w === "tie" ? "Tie game" : (w === "a" ? cLabel + " wins 🏆" : oLabel + " wins 🏆");
+
+  let rows = "";
+  for(let i=0; i<5; i++){
+    const cp = cL[i], op = oL[i];
+    const cppg = cp ? Number(cp.ppg || 0) : null;
+    const oppg = op ? Number(op.ppg || 0) : null;
+    let cHi = false, oHi = false;
+    if(cppg != null && oppg != null){
+      if(cppg > oppg) cHi = true; else if(oppg > cppg) oHi = true;   // equal → both neutral
+    }
+    rows += '<div class="mu-row"><div class="mu-pick">Pick ' + (i+1) + '</div>' +
+      '<div class="mu-pair">' + matchupCard(cp, cHi) + matchupCard(op, oHi) + '</div></div>';
+  }
+
+  return '<div class="h2h-title">⚔️ Challenge Result</div>' +
+    '<div class="h2h-vs">' +
+      '<div class="h2h-sidebox"><span>' + escapeHtml(cLabel) + '</span><b>' + Number(creatorRes.total).toFixed(1) + '</b></div>' +
+      '<div class="h2h-sidebox"><span>' + escapeHtml(oLabel) + '</span><b>' + Number(opponentRes.total).toFixed(1) + '</b></div>' +
+    '</div>' +
+    '<div class="h2h-winner">' + escapeHtml(winTxt) + '</div>' +
+    '<div class="mu-rows">' + rows + '</div>';
+}
+
+// Change 5: when the opponent finishes, show the same completed-matchup component.
 function renderH2HResultBox(mine, creator){
   const box = $("h2hBox");
   if(creator){
-    const w = h2hWinner(mine.total, creator.total);   // a = you (opponent), b = creator
-    const verdict = w === "tie" ? "Tie game" : (w === "a" ? "You win! 🏆" : "Opponent wins");
-    box.innerHTML =
-      '<div class="h2h-title">⚔️ Challenge Result</div>' +
-      '<div class="h2h-vs">' +
-        '<div class="h2h-sidebox"><span>You</span><b>' + mine.total.toFixed(1) + '</b></div>' +
-        '<div class="h2h-sidebox"><span>Opponent</span><b>' + Number(creator.total).toFixed(1) + '</b></div>' +
-      '</div>' +
-      '<div class="h2h-winner">' + verdict + '</div>';
+    box.innerHTML = renderMatchupHTML(creator, mine);   // creator vs opponent(mine)
   }else{
     box.innerHTML =
       '<div class="h2h-title">⚔️ Challenge Result</div>' +
@@ -2718,18 +3063,41 @@ function renderH2HResultBox(mine, creator){
   h2hActions();
 }
 
-// Change 15: H2H share text (no spoilers)
+// Change 1/6: H2H share text (no lineup spoilers; only the /c/ challenge link)
 function buildH2HShareText(){
-  const mine = +(state.totalTenths/10).toFixed(1);
   const url = getChallengeUrl(state.h2hChallengeCode);
+  // read-only completed matchup page
+  if(state.h2hReadonly){
+    return [
+      "⚔️ StatStack H2H Challenge Result",
+      "",
+      "Creator: " + Number(state.h2hCreatorTotal).toFixed(1) + " PPG",
+      "Opponent: " + Number(state.h2hOpponentTotal).toFixed(1) + " PPG",
+      "",
+      url
+    ].join("\n");
+  }
+  const mine = +(state.totalTenths/10).toFixed(1);
   if(state.h2hSide === "opponent"){
     const creator = parseJSONMaybe(state.h2hChallengeRow && state.h2hChallengeRow.creator_result_json);
-    const lines = ["⚔️ StatStack Challenge Result", "", "Me: " + mine.toFixed(1)];
-    if(creator) lines.push("Opponent: " + Number(creator.total).toFixed(1));
-    lines.push("", url);
-    return lines.join("\n");
+    const oppTotal = creator ? Number(creator.total).toFixed(1) : "—";
+    return [
+      "⚔️ StatStack H2H Challenge Result",
+      "",
+      "Me: " + mine.toFixed(1) + " PPG",
+      "Opponent: " + oppTotal + " PPG",
+      "",
+      url
+    ].join("\n");
   }
-  return ["⚔️ StatStack Challenge", "", "I scored " + mine.toFixed(1) + ".", "Can you get closer to 100?", "", url].join("\n");
+  return [
+    "⚔️ StatStack H2H Challenge",
+    "",
+    "I scored " + mine.toFixed(1) + " PPG.",
+    "Can you get closer to 100?",
+    "",
+    url
+  ].join("\n");
 }
 
 /* ---- Change 1: featured Daily home card ---- */
