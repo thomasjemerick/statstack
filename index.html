@@ -2462,7 +2462,13 @@ function endGame(){
   renderLineup(culpritIdx);
 
   // Features 1 + 2: Gems + Regret — account-independent, never block gameplay.
-  try{ renderRegret(computeRegret(state.picks, state.totalTenths)); }catch(e){ try{ $("regretBox").style.display="none"; }catch(_){} }
+  // Regret is disabled for Nightmare (season is assigned) and Target Practice (different format).
+  const regretEnabled = currentMode !== "nightmare" && currentMode !== "target";
+  if(regretEnabled){
+    try{ renderRegret(computeRegret(state.picks, state.totalTenths)); }catch(e){ try{ $("regretBox").style.display="none"; }catch(_){} }
+  }else{
+    try{ $("regretBox").style.display="none"; $("regretBox").innerHTML=""; }catch(e){}
+  }
   // Exclude THIS game's shared_results row from the gem history (deterministic, no race).
   const gemExclude = (currentMode === "h2h") ? null : (state.shareCode = state.shareCode || generateShareCode());
   try{ detectAndRenderGems(state.picks.slice(), gemExclude); }catch(e){}
@@ -2580,23 +2586,18 @@ function renderGems(gems, allPicks){
   if(!box) return;
   if(!gems || !gems.length){ box.style.display = "none"; box.innerHTML = ""; return; }
 
-  // 1. Inject a 💎 badge into each gem's lineup row (match by index in allPicks).
-  const wrap = $("lineup");
-  if(wrap && Array.isArray(allPicks)){
+  // 1. Reveal the 💎 slot pre-rendered inside each gem pick's .n name element.
+  if(Array.isArray(allPicks)){
     allPicks.forEach((p, i) => {
       const k = gemKey(p.name, p.abv, p.seasonLabel);
       if(!k || !gems.find(g => gemKey(g.name, g.abv, g.seasonLabel) === k)) return;
-      const rows = wrap.querySelectorAll ? wrap.querySelectorAll(".lu-row") : [];
-      const row = rows[i];
-      if(!row) return;
-      // inject after the lu-info block — visible but unobtrusive
-      const info = row.querySelector ? row.querySelector(".lu-info") : null;
-      if(info && !info.querySelector(".gem-badge")){
-        const badge = document.createElement("span");
-        badge.className = "gem-badge";
-        badge.textContent = "💎";
-        badge.title = "First recorded use in StatStack history";
-        info.appendChild(badge);
+      const slot = document.getElementById ? document.getElementById("lineup") : null;
+      if(!slot) return;
+      const spans = slot.querySelectorAll ? slot.querySelectorAll('[data-gem-slot="' + i + '"]') : [];
+      for(let s = 0; s < spans.length; s++){
+        spans[s].textContent = "💎";
+        spans[s].style.display = "";
+        spans[s].title = "First recorded use in StatStack history";
       }
     });
   }
@@ -2610,12 +2611,11 @@ function renderGems(gems, allPicks){
   box.style.display = "flex";
 }
 
-// Strongest single regret: a different season of the SAME player (same team) that lands closer to 100.
+// Strongest single regret: a different season of the SAME player (same team) that lands EXACTLY on 100.0.
+// Returns null (hidden) unless a swap produces exactly 1000 tenths.
 function computeRegret(picks, totalTenths){
   if(!Array.isArray(picks) || !picks.length) return null;
-  const curDist = Math.abs(1000 - totalTenths);
-  if(curDist === 0) return null;   // already perfect — no regret
-  let best = null;
+  if(totalTenths === 1000) return null;   // already perfect
   for(const p of picks){
     if(!p || !p.pid || !p.abv) continue;
     const seasons = seasonsByPlayerTeam.get(p.pid + "|" + p.abv) || [];
@@ -2623,14 +2623,12 @@ function computeRegret(picks, totalTenths){
     for(const s of seasons){
       if(s.season_label === p.seasonLabel) continue;
       const newTenths = totalTenths - chosenTenths + Math.round(Number(s.ppg) * 10);
-      const dist = Math.abs(1000 - newTenths);
-      if(dist >= curDist) continue;                 // only genuine improvements
-      if(!best || dist < best.dist){
-        best = { pick:p, altLabel:s.season_label, altPpg:Number(s.ppg), newTenths, dist };
+      if(newTenths === 1000){
+        return { pick:p, altLabel:s.season_label, altPpg:Number(s.ppg), newTenths, dist:0 };
       }
     }
   }
-  return best;   // null ⇒ nothing improves the score ⇒ section hidden
+  return null;   // no swap reaches exactly 100 → section hidden
 }
 function renderRegret(best){
   const box = $("regretBox");
@@ -2757,7 +2755,7 @@ function renderLineup(culpritIdx){
       row.innerHTML =
         '<div class="lu-no">' + (i+1) + '</div>' +
         headshotHTML(p) +
-        '<div class="lu-info"><div class="n">' + escapeHtml(p.name) + '</div>' +
+        '<div class="lu-info"><div class="n">' + escapeHtml(p.name) + '<span class="gem-badge" data-gem-slot="' + i + '" style="display:none"></span></div>' +
         '<div class="m">' + p.abv + ' · ' + p.seasonLabel +
           (i===culpritIdx ? ' · tipped over 100' : '') +
           (p.assist ? ' · (assist used)' : '') + '</div></div>' +
