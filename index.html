@@ -916,12 +916,12 @@ body::after{ /* vignette */
    v9 — Gems, Regret, clickable H2H history, H2H visual polish
    ====================================================== */
 
-/* Feature 1 — Gems */
-.gem-box{ margin-top:16px; padding:16px; border-radius:var(--radius); border:1px solid rgba(120,200,255,.45); background:linear-gradient(160deg, rgba(120,200,255,.12), rgba(120,200,255,.04)); }
-.gem-head{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:24px; letter-spacing:.02em; text-transform:uppercase; color:#7fd0ff; text-align:center; }
-.gem-item{ margin-top:12px; text-align:center; }
-.gem-name{ font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:20px; color:var(--text); }
-.gem-sub{ font-size:11.5px; color:var(--muted-2); letter-spacing:.02em; margin-top:2px; }
+/* Feature 1 — Gems: inline badge + compact footer */
+.gem-badge{ font-size:13px; margin-left:7px; line-height:1; cursor:default; vertical-align:middle; }
+.gem-box{ margin-top:10px; padding:9px 12px; border-radius:var(--radius); border:1px solid rgba(120,200,255,.25); background:rgba(120,200,255,.06); display:flex; align-items:flex-start; gap:8px; }
+.gem-ft-ico{ font-size:15px; flex-shrink:0; line-height:1.3; }
+.gem-ft-txt{ font-size:12px; color:var(--muted-2); line-height:1.5; }
+.gem-ft-txt b{ color:#7fd0ff; font-weight:700; }
 
 /* Feature 2 — Regret */
 .regret-box{ margin-top:16px; padding:16px; border-radius:var(--radius); border:1px solid rgba(255,140,120,.4); background:linear-gradient(160deg, rgba(255,140,120,.10), rgba(255,140,120,.03)); }
@@ -2569,24 +2569,45 @@ async function detectAndRenderGems(picks, excludeShareCode){
   try{ seen = await buildSeenSet(excludeShareCode); }catch(e){ seen = null; }
   if(!seen) return;   // history unavailable → show nothing rather than false gems
   const gems = picks.filter(p => { const k = gemKey(p.name, p.abv, p.seasonLabel); return k && !seen.has(k); });
-  renderGems(gems);
+  renderGems(gems, picks);
   // Track the discovery on this game's row (best-effort; old rows untouched; v1-simple).
   if(gems.length && excludeShareCode){
     try{ supabaseUpdate("shared_results", "share_code", excludeShareCode, { is_gem: true, gem_discovered_at: new Date().toISOString() }); }catch(e){}
   }
 }
-function renderGems(gems){
+function renderGems(gems, allPicks){
   const box = $("gemBox");
-  if(!box || !gems || !gems.length) return;
-  const head = gems.length === 1 ? "💎 GEM FOUND" : ("💎 " + gems.length + " GEMS FOUND");
-  const items = gems.map(p =>
-    '<div class="gem-item">' +
-      '<div class="gem-name">' + escapeHtml((p.seasonLabel || "") + " " + (p.name || "")) + '</div>' +
-      '<div class="gem-sub">First recorded use in StatStack history.</div>' +
-    '</div>'
-  ).join("");
-  box.innerHTML = '<div class="gem-head">' + head + '</div>' + items;
-  box.style.display = "block";
+  if(!box) return;
+  if(!gems || !gems.length){ box.style.display = "none"; box.innerHTML = ""; return; }
+
+  // 1. Inject a 💎 badge into each gem's lineup row (match by index in allPicks).
+  const wrap = $("lineup");
+  if(wrap && Array.isArray(allPicks)){
+    allPicks.forEach((p, i) => {
+      const k = gemKey(p.name, p.abv, p.seasonLabel);
+      if(!k || !gems.find(g => gemKey(g.name, g.abv, g.seasonLabel) === k)) return;
+      const rows = wrap.querySelectorAll ? wrap.querySelectorAll(".lu-row") : [];
+      const row = rows[i];
+      if(!row) return;
+      // inject after the lu-info block — visible but unobtrusive
+      const info = row.querySelector ? row.querySelector(".lu-info") : null;
+      if(info && !info.querySelector(".gem-badge")){
+        const badge = document.createElement("span");
+        badge.className = "gem-badge";
+        badge.textContent = "💎";
+        badge.title = "First recorded use in StatStack history";
+        info.appendChild(badge);
+      }
+    });
+  }
+
+  // 2. Compact footer — count + one-line description, no player names.
+  const count = gems.length;
+  const label = count === 1 ? "1 Gem Found" : (count + " Gems Found");
+  box.innerHTML =
+    '<span class="gem-ft-ico">💎</span>' +
+    '<span class="gem-ft-txt"><b>' + label + '</b> — Gems represent the first recorded use of a player-season in StatStack history.</span>';
+  box.style.display = "flex";
 }
 
 // Strongest single regret: a different season of the SAME player (same team) that lands closer to 100.
