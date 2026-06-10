@@ -911,6 +911,62 @@ body::after{ /* vignette */
 #nameModal .btn{ margin-top:16px; }
 .lb-who{ font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:13px; color:var(--gold-dim); margin-top:2px; }
 .hof-who{ font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:12px; color:var(--gold-dim); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:104px; }
+
+/* ======================================================
+   v9 — Gems, Regret, clickable H2H history, H2H visual polish
+   ====================================================== */
+
+/* Feature 1 — Gems */
+.gem-box{ margin-top:16px; padding:16px; border-radius:var(--radius); border:1px solid rgba(120,200,255,.45); background:linear-gradient(160deg, rgba(120,200,255,.12), rgba(120,200,255,.04)); }
+.gem-head{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:24px; letter-spacing:.02em; text-transform:uppercase; color:#7fd0ff; text-align:center; }
+.gem-item{ margin-top:12px; text-align:center; }
+.gem-name{ font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:20px; color:var(--text); }
+.gem-sub{ font-size:11.5px; color:var(--muted-2); letter-spacing:.02em; margin-top:2px; }
+
+/* Feature 2 — Regret */
+.regret-box{ margin-top:16px; padding:16px; border-radius:var(--radius); border:1px solid rgba(255,140,120,.4); background:linear-gradient(160deg, rgba(255,140,120,.10), rgba(255,140,120,.03)); }
+.regret-head{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:22px; letter-spacing:.02em; text-transform:uppercase; color:#ff9d7a; text-align:center; margin-bottom:12px; }
+.regret-grid{ display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; }
+.regret-col{ text-align:center; min-width:0; }
+.regret-label{ font-family:"DM Mono",monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted-2); }
+.regret-player{ font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:17px; margin-top:4px; line-height:1.1; }
+.regret-player.alt{ color:#2fd28a; }
+.regret-ppg{ font-family:"DM Mono",monospace; font-size:13px; color:var(--muted-2); margin-top:2px; }
+.regret-arrow{ color:var(--muted-2); font-size:20px; }
+.regret-foot{ text-align:center; margin-top:14px; font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:18px; }
+.regret-foot b{ color:var(--gold); font-weight:900; font-size:22px; }
+@media (max-width:560px){
+  .regret-grid{ grid-template-columns:1fr; gap:6px; }
+  .regret-arrow{ transform:rotate(90deg); }
+}
+
+/* Feature 3/4 — clickable challenge history rows */
+.ms-row.ms-challenge{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.ms-row.clickable{ cursor:pointer; transition:border-color .15s, background .15s, transform .08s; }
+.ms-row.clickable:hover{ border-color:var(--gold-dim); background:var(--panel-2); }
+.ms-row.clickable:active{ transform:scale(.997); }
+.msc-left{ display:flex; align-items:center; gap:10px; min-width:0; }
+.msc-outcome{ font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:14px; letter-spacing:.03em; text-transform:uppercase; white-space:nowrap; }
+.msc-outcome.win{ color:#2fd28a; }
+.msc-outcome.loss{ color:#ff5b5b; }
+.msc-outcome.tie{ color:var(--gold); }
+.msc-outcome.pending{ color:var(--muted-2); }
+.msc-vs{ font-size:13px; color:var(--muted-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.msc-score{ font-family:"DM Mono",monospace; font-size:13px; white-space:nowrap; }
+
+/* Feature 5 — stronger H2H result banner + accents + mobile spacing */
+.h2h-banner{ font-size:34px; padding:18px 14px; border-width:2px; box-shadow:0 14px 36px -20px rgba(0,0,0,.9); }
+.h2h-banner.win{ color:#36e29a; background:rgba(47,210,138,.18); border-color:rgba(47,210,138,.7); }
+.h2h-banner.lose{ color:#ff6b6b; background:rgba(255,91,91,.18); border-color:rgba(255,91,91,.7); }
+.h2h-banner.tie{ color:var(--gold); background:rgba(232,184,75,.15); border-color:var(--gold); }
+.mu-card.hi{ border-color:rgba(47,210,138,.75); background:rgba(47,210,138,.12); box-shadow:inset 0 0 0 1px rgba(47,210,138,.35); }
+.mu-card.hi .mu-ppg{ color:#36e29a; }
+@media (max-width:560px){
+  .h2h-banner{ font-size:26px; padding:14px 10px; }
+  .mu-table{ margin-top:14px; }
+  .mu-row{ gap:6px; }
+  .mu-thead div{ font-size:9px; }
+}
 </style>
 </head>
 <body>
@@ -1074,6 +1130,9 @@ body::after{ /* vignette */
       <div class="lineup-head">Final lineup</div>
       <div id="lineup"></div>
     </div>
+
+    <div id="gemBox" class="gem-box" style="display:none"></div>
+    <div id="regretBox" class="regret-box" style="display:none"></div>
 
     <div id="shareMsgWrap" class="share-msg-wrap">
       <input id="shareMsg" class="share-msg" type="text" maxlength="120"
@@ -1440,6 +1499,95 @@ async function insertWithIdentity(table, data){
   return supabaseInsert(table, data);
 }
 
+/* ============================================================
+   IDENTITY SCOPE — logged in ⇒ primary identity is user_id;
+   logged out ⇒ primary identity is SESSION_ID. SESSION_ID is
+   always retained and always written to rows.
+   ============================================================ */
+// Change 1
+function getIdentityScope(){
+  if(currentUser && currentUser.id){
+    return {
+      type: "user",
+      key: currentUser.id,
+      user_id: currentUser.id,
+      session_id: SESSION_ID,
+      display_name: (currentProfile && currentProfile.display_name) || "Guest",
+      avatar_url: (currentProfile && currentProfile.avatar_url) || null
+    };
+  }
+  return {
+    type: "session",
+    key: SESSION_ID,
+    user_id: null,
+    session_id: SESSION_ID,
+    display_name: "Guest",
+    avatar_url: null
+  };
+}
+
+// Change 4: attach this device's anonymous rows to the account (session_id = SESSION_ID AND user_id IS NULL).
+// Never deletes rows, never changes session_id, fails silently if columns/table are missing.
+const CLAIM_TABLES = ["game_results","daily_results","perfect_games","target_practice_results"];
+async function claimTableRows(table, uid, dn, av){
+  try{
+    const url = `${SUPABASE_URL}/rest/v1/${table}?session_id=eq.${encodeURIComponent(SESSION_ID)}&user_id=is.null`;
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify({ user_id: uid, display_name: dn, avatar_url: av })
+    });
+    if(!res.ok){ console.warn("claimDeviceData failed:", table, res.status); }
+  }catch(e){ console.warn("claimDeviceData error:", table, e); }
+}
+async function claimDeviceData(){
+  if(!supabaseClient || !currentUser || !(currentProfile && currentProfile.display_name)) return;
+  const uid = currentUser.id;
+  const dn  = currentProfile.display_name;
+  const av  = currentProfile.avatar_url || null;
+  for(const t of CLAIM_TABLES){ await claimTableRows(t, uid, dn, av); }
+}
+
+// Change 2/3/6: mirror the account's canonical Daily completion onto this device so the existing
+// device-based Daily UI + eligibility reflect cross-device play (and block a second canonical attempt).
+async function syncDailyFromAccount(){
+  if(!supabaseClient || !currentUser) return;
+  try{
+    const today = getDailySeed();
+    if(readDaily(today)){ return; }   // already recorded on this device
+    const rows = await supabaseSelect("daily_results",
+      `?user_id=eq.${encodeURIComponent(currentUser.id)}&puzzle_date=eq.${encodeURIComponent(today)}&select=*&limit=1`);
+    if(Array.isArray(rows) && rows.length){
+      const r = rows[0];
+      const total = Number(r.total);
+      let picks = r.lineup_json;
+      if(typeof picks === "string"){ try{ picks = JSON.parse(picks); }catch(e){ picks = []; } }
+      const compact = Array.isArray(picks)
+        ? picks.map(p => ({ name:p.name||p.n, abv:p.abv||p.a, season:p.seasonLabel||p.s, ppg:p.ppg }))
+        : [];
+      writeDaily(today, {
+        firstScore: total,
+        attempts: 1,
+        picks: compact,
+        result: r.result || dailyResultKey(Math.round(total*10))
+      });
+      try{ renderDailyFeature(); }catch(e){}
+    }
+  }catch(e){ console.warn("syncDailyFromAccount failed", e); }
+}
+
+// Run once we know the account + a display name: claim this device's rows, then sync Daily.
+async function onIdentityReady(){
+  if(!(currentUser && currentProfile && currentProfile.display_name)) return;
+  await claimDeviceData();
+  await syncDailyFromAccount();
+}
+
 async function signInWithGoogle(){
   if(!supabaseClient) return;
   try{
@@ -1487,6 +1635,7 @@ async function initAuth(){
       currentUser = session.user;
       await loadOrCreateProfile(currentUser);
       maybePromptDisplayName();
+      onIdentityReady();
     }
   }catch(e){ console.warn("auth restore failed", e); }
   renderAccountUI();
@@ -1497,6 +1646,7 @@ async function initAuth(){
         await loadOrCreateProfile(currentUser);
         renderAccountUI();
         maybePromptDisplayName();
+        onIdentityReady();
       }else{
         currentUser = null; currentProfile = null; renderAccountUI();
       }
@@ -1568,6 +1718,7 @@ async function saveDisplayName(){
   try{ localStorage.setItem("statstack_display_name", v.value); }catch(e){}
   $("nameModal").classList.remove("show");
   renderAccountUI();
+  onIdentityReady();   // first valid name → claim this device's anonymous rows + sync Daily
 }
 
 /* Change 1: pick logging → Supabase `picks` table (fire-and-forget) */
@@ -2309,6 +2460,13 @@ function endGame(){
   ftEl.className = "final-total display" + (t > 1000 ? " over" : (t === 1000 ? " win" : ""));
 
   renderLineup(culpritIdx);
+
+  // Features 1 + 2: Gems + Regret — account-independent, never block gameplay.
+  try{ renderRegret(computeRegret(state.picks, state.totalTenths)); }catch(e){ try{ $("regretBox").style.display="none"; }catch(_){} }
+  // Exclude THIS game's shared_results row from the gem history (deterministic, no race).
+  const gemExclude = (currentMode === "h2h") ? null : (state.shareCode = state.shareCode || generateShareCode());
+  try{ detectAndRenderGems(state.picks.slice(), gemExclude); }catch(e){}
+
   showScreen("result");
 
   // reset chrome to a normal (non-shared) completion
@@ -2349,13 +2507,143 @@ function endGame(){
   }
 }
 
+/* ============================================================
+   FEATURE 1 — GEMS 💎  (first-ever recorded use of a player-season)
+   FEATURE 2 — REGRET 😢 (best alternate season of a chosen player)
+   Both are account-independent and never block gameplay.
+   ============================================================ */
+function gemKey(name, abv, season){
+  if(!name || !season) return null;
+  return String(name).trim().toLowerCase() + "|" + String(abv || "").trim().toUpperCase() + "|" + String(season).trim();
+}
+function addLineupArrToSeen(seen, arr){
+  if(!Array.isArray(arr)) return;
+  for(const p of arr){
+    if(!p) continue;
+    const k = gemKey(p.name || p.n, p.abv || p.a, p.seasonLabel || p.s || p.season);
+    if(k) seen.add(k);
+  }
+}
+function addRowsLineupsToSeen(seen, rows){
+  for(const r of (rows || [])){
+    let lu = r.lineup_json;
+    if(typeof lu === "string"){ try{ lu = JSON.parse(lu); }catch(e){ lu = null; } }
+    addLineupArrToSeen(seen, lu);
+  }
+}
+// Returns a Set of seen "name|TEAM|season" keys, or null if the primary history read failed
+// (so we never falsely flag everything as a Gem on a transient network error).
+async function buildSeenSet(excludeShareCode){
+  const seen = new Set();
+  try{
+    const q = excludeShareCode
+      ? `?select=lineup_json&share_code=neq.${encodeURIComponent(excludeShareCode)}&limit=8000`
+      : `?select=lineup_json&limit=8000`;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/shared_results${q}`, {
+      headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    if(!res.ok) return null;
+    addRowsLineupsToSeen(seen, await res.json());
+  }catch(e){ return null; }
+  // Best-effort extra sources (H2H challenge lineups + Target Practice picks).
+  try{
+    const rows = await supabaseSelect("challenges", `?select=creator_result_json,opponent_result_json&limit=8000`);
+    for(const r of (rows || [])){
+      [r.creator_result_json, r.opponent_result_json].forEach(j => {
+        let o = j; if(typeof o === "string"){ try{ o = JSON.parse(o); }catch(e){ o = null; } }
+        if(o && o.lineup) addLineupArrToSeen(seen, o.lineup);
+      });
+    }
+  }catch(e){}
+  try{
+    const rows = await supabaseSelect("target_practice_results", `?select=picked_player,team,season&limit=8000`);
+    for(const r of (rows || [])){ const k = gemKey(r.picked_player, r.team, r.season); if(k) seen.add(k); }
+  }catch(e){}
+  return seen;
+}
+async function detectAndRenderGems(picks, excludeShareCode){
+  const box = $("gemBox");
+  if(box){ box.style.display = "none"; box.innerHTML = ""; }
+  if(!Array.isArray(picks) || !picks.length) return;
+  let seen = null;
+  try{ seen = await buildSeenSet(excludeShareCode); }catch(e){ seen = null; }
+  if(!seen) return;   // history unavailable → show nothing rather than false gems
+  const gems = picks.filter(p => { const k = gemKey(p.name, p.abv, p.seasonLabel); return k && !seen.has(k); });
+  renderGems(gems);
+  // Track the discovery on this game's row (best-effort; old rows untouched; v1-simple).
+  if(gems.length && excludeShareCode){
+    try{ supabaseUpdate("shared_results", "share_code", excludeShareCode, { is_gem: true, gem_discovered_at: new Date().toISOString() }); }catch(e){}
+  }
+}
+function renderGems(gems){
+  const box = $("gemBox");
+  if(!box || !gems || !gems.length) return;
+  const head = gems.length === 1 ? "💎 GEM FOUND" : ("💎 " + gems.length + " GEMS FOUND");
+  const items = gems.map(p =>
+    '<div class="gem-item">' +
+      '<div class="gem-name">' + escapeHtml((p.seasonLabel || "") + " " + (p.name || "")) + '</div>' +
+      '<div class="gem-sub">First recorded use in StatStack history.</div>' +
+    '</div>'
+  ).join("");
+  box.innerHTML = '<div class="gem-head">' + head + '</div>' + items;
+  box.style.display = "block";
+}
+
+// Strongest single regret: a different season of the SAME player (same team) that lands closer to 100.
+function computeRegret(picks, totalTenths){
+  if(!Array.isArray(picks) || !picks.length) return null;
+  const curDist = Math.abs(1000 - totalTenths);
+  if(curDist === 0) return null;   // already perfect — no regret
+  let best = null;
+  for(const p of picks){
+    if(!p || !p.pid || !p.abv) continue;
+    const seasons = seasonsByPlayerTeam.get(p.pid + "|" + p.abv) || [];
+    const chosenTenths = Math.round(Number(p.ppg) * 10);
+    for(const s of seasons){
+      if(s.season_label === p.seasonLabel) continue;
+      const newTenths = totalTenths - chosenTenths + Math.round(Number(s.ppg) * 10);
+      const dist = Math.abs(1000 - newTenths);
+      if(dist >= curDist) continue;                 // only genuine improvements
+      if(!best || dist < best.dist){
+        best = { pick:p, altLabel:s.season_label, altPpg:Number(s.ppg), newTenths, dist };
+      }
+    }
+  }
+  return best;   // null ⇒ nothing improves the score ⇒ section hidden
+}
+function renderRegret(best){
+  const box = $("regretBox");
+  if(!box) return;
+  if(!best){ box.style.display = "none"; box.innerHTML = ""; return; }
+  const p = best.pick;
+  const newTotal = (best.newTenths / 10).toFixed(1);
+  const bullseye = best.newTenths === 1000 ? " 🎯" : "";
+  box.innerHTML =
+    '<div class="regret-head">😢 REGRET</div>' +
+    '<div class="regret-grid">' +
+      '<div class="regret-col">' +
+        '<div class="regret-label">You chose</div>' +
+        '<div class="regret-player">' + escapeHtml(p.name) + ' ' + escapeHtml(p.seasonLabel) + '</div>' +
+        '<div class="regret-ppg">' + Number(p.ppg).toFixed(1) + ' PPG</div>' +
+      '</div>' +
+      '<div class="regret-arrow">→</div>' +
+      '<div class="regret-col">' +
+        '<div class="regret-label">If you had chosen</div>' +
+        '<div class="regret-player alt">' + escapeHtml(p.name) + ' ' + escapeHtml(best.altLabel) + '</div>' +
+        '<div class="regret-ppg">' + best.altPpg.toFixed(1) + ' PPG</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="regret-foot">Your score would have been <b>' + newTotal + bullseye + '</b></div>';
+  box.style.display = "block";
+}
+
 /* Changes 2/4/5: write completion records to Supabase (all silent / non-blocking). */
 function submitCompletion(){
   if(!state || state.isSharedView) return;
   const t = state.totalTenths;
   const finalTotal  = +(t/10).toFixed(1);
   const finalResult = dailyResultKey(t);
-  const code = generateShareCode();
+  const code = state.shareCode || generateShareCode();
   state.shareCode = code;
 
   // Change 5: every completed game → shared_results
@@ -3136,10 +3424,16 @@ function resultLabel(key){
   return ({ perfect:"Perfect 100!", bust:"Bust — over 100", over:"Just over 100", under:"Under 100" })[key] || String(key || "—");
 }
 
-function onDailyClick(){
+async function onDailyClick(){
   const today = getDailySeed();
-  const existing = readDaily(today);
-  if(existing){ showDailyCompleted(existing, today); }   // first attempt already locked
+  let existing = readDaily(today);
+  // Change 2/3: when logged in, the account is the source of truth — pull any cross-device
+  // completion down before deciding whether this is a fresh canonical attempt.
+  if(!existing && currentUser && supabaseClient){
+    try{ await syncDailyFromAccount(); }catch(e){}
+    existing = readDaily(today);
+  }
+  if(existing){ showDailyCompleted(existing, today); }   // first attempt already locked (this device or account)
   else{ startGame("daily"); }                            // canonical first attempt
 }
 
@@ -3670,10 +3964,10 @@ async function openMyStats(){
   $("statsModal").classList.add("show");
   let query;
   if(currentUser && currentUser.id){
-    // Change 10: logged-in users see their account rows AND this device's anonymous history
+    // Change 5: account rows, plus this device's still-anonymous rows (avoids double-counting claimed rows)
     const uid = encodeURIComponent(currentUser.id);
     const sid = encodeURIComponent(SESSION_ID);
-    query = `?or=(user_id.eq.${uid},session_id.eq.${sid})&select=*&order=created_at.desc&limit=1000`;
+    query = `?or=(user_id.eq.${uid},and(session_id.eq.${sid},user_id.is.null))&select=*&order=created_at.desc&limit=1000`;
   }else{
     query = `?session_id=eq.${encodeURIComponent(SESSION_ID)}&select=*&order=created_at.desc&limit=1000`;
   }
@@ -3748,7 +4042,13 @@ async function renderH2HStats(){
       else if((res === "a") === iAmCreator){ w++; outcome = "win"; }
       else{ l++; outcome = "loss"; }
     }
-    recent.push({ code:c.challenge_code, outcome, mine: iAmCreator ? (cr&&cr.total) : (op&&op.total), other: iAmCreator ? (op&&op.total) : (cr&&cr.total) });
+    recent.push({
+      code: c.challenge_code,
+      outcome,
+      mine: iAmCreator ? (cr&&cr.total) : (op&&op.total),
+      other: iAmCreator ? (op&&op.total) : (cr&&cr.total),
+      oppName: (function(){ const o = iAmCreator ? op : cr; const nm = o && o.display_name; return (nm && nm !== "Guest") ? nm : null; })()
+    });
   });
   const played = w+l+ti;
   const winPct = played ? Math.round((w/played)*100) : 0;
@@ -3760,12 +4060,28 @@ async function renderH2HStats(){
     '<div class="ms-stat"><div class="ms-k">Win %</div><div class="ms-v">' + winPct + '%</div></div>' +
     '</div>';
   const rec10 = recent.slice(0,10).map(r => {
-    const badge = r.outcome === "win" ? "W" : r.outcome === "loss" ? "L" : r.outcome === "tie" ? "T" : "·";
+    const o = r.outcome;
+    const badge = o === "win"  ? '<span class="msc-outcome win">🏆 WIN</span>'
+                : o === "loss" ? '<span class="msc-outcome loss">❌ LOSS</span>'
+                : o === "tie"  ? '<span class="msc-outcome tie">🤝 TIE</span>'
+                :                '<span class="msc-outcome pending">⏳ PENDING</span>';
+    const vs = r.oppName ? ('vs ' + escapeHtml(r.oppName)) : 'Challenge';
     const sc = (r.mine!=null?Number(r.mine).toFixed(1):"—") + " vs " + (r.other!=null?Number(r.other).toFixed(1):"—");
-    return '<div class="ms-row"><span>' + badge + '  ' + escapeHtml(r.code||"") + '</span><b>' + sc + '</b></div>';
+    return '<div class="ms-row ms-challenge clickable" data-code="' + escapeHtml(r.code||"") + '" role="button" tabindex="0">' +
+      '<span class="msc-left">' + badge + '<span class="msc-vs">' + vs + '</span></span>' +
+      '<b class="msc-score">' + sc + '</b></div>';
   }).join("");
   html += '<div class="modal-sub">Recent Challenges</div><div class="ms-list">' + (rec10 || '<div class="noresults">No challenges yet.</div>') + '</div>';
   holder.innerHTML = html;
+  // Feature 3: entire row opens the completed-challenge viewer via the existing /c/ route
+  holder.querySelectorAll(".ms-challenge.clickable").forEach(el => {
+    el.addEventListener("click", () => {
+      const code = el.getAttribute("data-code");
+      if(!code) return;
+      closeMyStats();
+      loadChallenge(code);
+    });
+  });
 }
 
 /* ---- Change 7: debug helper ---- */
