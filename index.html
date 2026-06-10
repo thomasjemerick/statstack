@@ -1334,6 +1334,7 @@ try{
 }catch(e){ supabaseClient = null; }
 let currentUser = null;       // Supabase auth user (or null)
 let currentProfile = null;    // row from profiles (or null)
+let profileJustCreated = false;   // true only on the session where the profile is first created
 
 async function supabaseInsert(table, data){
   try{
@@ -1461,7 +1462,7 @@ async function loadOrCreateProfile(user){
   if(!supabaseClient || !user) return null;
   try{
     const rows = await supabaseSelect("profiles", `?user_id=eq.${encodeURIComponent(user.id)}&limit=1&select=*`);
-    if(Array.isArray(rows) && rows.length){ currentProfile = rows[0]; return currentProfile; }
+    if(Array.isArray(rows) && rows.length){ currentProfile = rows[0]; profileJustCreated = false; return currentProfile; }
     const meta = user.user_metadata || {};
     const newProfile = {
       user_id: user.id,
@@ -1471,6 +1472,7 @@ async function loadOrCreateProfile(user){
     };
     const created = await supabaseInsert("profiles", newProfile);
     currentProfile = created || newProfile;
+    profileJustCreated = true;   // only true on first-ever account creation
     return currentProfile;
   }catch(e){ console.warn("profile load/create failed", e); currentProfile = null; return null; }
 }
@@ -1542,11 +1544,17 @@ function validateDisplayName(raw){
   return { ok:true, value:name };
 }
 function maybePromptDisplayName(){
-  if(currentUser && currentProfile && !currentProfile.display_name){
-    $("nameError").style.display = "none";
-    $("nameInput").value = "";
-    $("nameModal").classList.add("show");
-  }
+  if(!(currentUser && currentProfile)) return;
+  if(currentProfile.display_name) return;                 // already has a name → never ask
+  // Only ask when the account was just created, and only once per device.
+  let asked = null;
+  try{ asked = localStorage.getItem("statstack_name_asked_" + currentUser.id); }catch(e){}
+  if(asked) return;
+  if(!profileJustCreated) return;
+  try{ localStorage.setItem("statstack_name_asked_" + currentUser.id, "1"); }catch(e){}
+  $("nameError").style.display = "none";
+  $("nameInput").value = "";
+  $("nameModal").classList.add("show");
 }
 async function saveDisplayName(){
   const err = $("nameError");
