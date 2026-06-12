@@ -1350,6 +1350,30 @@ const TEAM_ID_BY_ABV = {
 };
 function teamLogoId(abv){ return TEAM_ID_BY_ABV[abv] || null; }
 
+// Historical franchise abbreviations -> their current franchise. Used so that a season played
+// under a relocated/renamed franchise (e.g. Buffalo Braves "BUF") counts toward the modern team
+// ("LAC") for gameplay eligibility. The season's own team_abv / raw_team_abv are left untouched
+// on each row for display; only the *index keys* are canonicalized.
+const FRANCHISE_ABV = {
+  TRI:"ATL", MLH:"ATL", STL:"ATL",                 // Tri-Cities -> Milwaukee -> St. Louis -> Atlanta Hawks
+  NYN:"BKN", NJN:"BKN",                             // New York / New Jersey Nets -> Brooklyn
+  CHH:"CHA",                                        // original Charlotte Hornets (1988-2002) -> Charlotte
+  FTW:"DET",                                        // Fort Wayne Pistons -> Detroit
+  PHW:"GSW", SFW:"GSW",                             // Philadelphia / San Francisco Warriors -> Golden State
+  SDR:"HOU",                                        // San Diego Rockets -> Houston
+  BUF:"LAC", SDC:"LAC",                             // Buffalo Braves / San Diego Clippers -> LA Clippers
+  MNL:"LAL",                                        // Minneapolis Lakers -> LA Lakers
+  VAN:"MEM",                                        // Vancouver Grizzlies -> Memphis
+  NOH:"NOP", NOK:"NOP",                             // New Orleans (/OKC) Hornets -> Pelicans
+  SEA:"OKC",                                        // Seattle SuperSonics -> Oklahoma City Thunder
+  SYR:"PHI",                                        // Syracuse Nationals -> Philadelphia 76ers
+  ROC:"SAC", CIN:"SAC", KCO:"SAC", KCK:"SAC",       // Rochester/Cincinnati Royals -> KC Kings -> Sacramento
+  NOJ:"UTA",                                        // New Orleans Jazz -> Utah
+  CHP:"WAS", CHZ:"WAS", BAL:"WAS", CAP:"WAS", WSB:"WAS" // Chicago Packers/Zephyrs -> Baltimore -> Capital/Washington Bullets -> Wizards
+};
+// Map any season team_abv to its current-franchise abbreviation (identity for the 30 current teams).
+function canonTeamAbv(abv){ return FRANCHISE_ABV[abv] || abv; }
+
 // Flattened, normalized player-season-team rows (Part 2). Built in buildIndexes().
 let allPlayerSeasons = [];
 
@@ -1943,7 +1967,8 @@ function buildIndexes(data){
 
   for(const r of rows){
     const pid = r.player_key;          // slug (new) or numeric id (legacy) — used as the player identity
-    const abv = r.team_abv;            // gameplay/team filtering uses team_abv, never raw_team_abv
+    const seasonAbv = r.team_abv;      // the season's own (era) abbreviation — preserved for display
+    const abv = canonTeamAbv(seasonAbv); // current-franchise abbreviation — used for ALL eligibility keys
 
     if(!playerNames.has(pid)) playerNames.set(pid, r.player_name);
     if(r.is_active === true) playerActive.set(pid, true);
@@ -1957,7 +1982,11 @@ function buildIndexes(data){
     if(!seasonsByPlayerTeam.has(key)) seasonsByPlayerTeam.set(key, []);
     seasonsByPlayerTeam.get(key).push(r);
 
-    if(!teamInfo.has(abv)) teamInfo.set(abv, { id: r.team_id || teamLogoId(abv), name: r.team_full_name });
+    // teamInfo holds the *current* franchise's logo id + name. Prefer a modern-era row
+    // (team_abv === canonical) for the display name so e.g. "LAC" shows "Los Angeles Clippers"
+    // rather than "Buffalo Braves".
+    if(!teamInfo.has(abv)) teamInfo.set(abv, { id: teamLogoId(abv) || r.team_id || null, name: r.team_full_name });
+    if(seasonAbv === abv) teamInfo.get(abv).name = r.team_full_name;
 
     if(!yearsByTeam.has(abv)) yearsByTeam.set(abv, new Set());
     yearsByTeam.get(abv).add(r.season_label);
@@ -1969,9 +1998,9 @@ function buildIndexes(data){
     if(!prevYM || Number(r.gp || 0) > Number(prevYM.gp || 0)) ym.set(pid, r);
   }
 
-  // Collapse duplicate rows for the same player+team+season, keeping the fuller (higher-GP) row.
-  // Multi-team seasons live in separate buckets (keyed by team), so a player who appears for two
-  // different teams in the same season (e.g. Luka Dončić 2024-25 DAL and LAL) is preserved.
+  // Collapse duplicate rows for the same player+franchise+season, keeping the fuller (higher-GP)
+  // row. Distinct franchises stay in separate buckets, so a player traded between two different
+  // franchises in the same season (e.g. Luka Dončić 2024-25 DAL and LAL) is preserved.
   for(const [key, arr] of seasonsByPlayerTeam){
     const byLabel = new Map();
     for(const s of arr){
