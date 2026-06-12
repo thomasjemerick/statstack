@@ -1339,6 +1339,24 @@ const teamInfo           = new Map(); // team_abv  -> { id, name }
 const yearsByTeam        = new Map(); // team_abv  -> Set(season_label)            (nightmare)
 const playersByTeamYear  = new Map(); // `${abv}|${label}` -> Map(pid -> season)   (nightmare)
 
+/* ---- NBA franchise logo ids for the 30 current teams (new nba_data.json carries no team_id). ---- */
+const TEAM_ID_BY_ABV = {
+  ATL:"1610612737", BOS:"1610612738", BKN:"1610612751", CHA:"1610612766", CHI:"1610612741",
+  CLE:"1610612739", DAL:"1610612742", DEN:"1610612743", DET:"1610612765", GSW:"1610612744",
+  HOU:"1610612745", IND:"1610612754", LAC:"1610612746", LAL:"1610612747", MEM:"1610612763",
+  MIA:"1610612748", MIL:"1610612749", MIN:"1610612750", NOP:"1610612740", NYK:"1610612752",
+  OKC:"1610612760", ORL:"1610612753", PHI:"1610612755", PHX:"1610612756", POR:"1610612757",
+  SAC:"1610612758", SAS:"1610612759", TOR:"1610612761", UTA:"1610612762", WAS:"1610612764"
+};
+function teamLogoId(abv){ return TEAM_ID_BY_ABV[abv] || null; }
+
+// Flattened, normalized player-season-team rows (Part 2). Built in buildIndexes().
+let allPlayerSeasons = [];
+
+// Validated slug -> {nba_player_id, headshot_url} mapping (player_headshots_validated.json).
+// Keyed by player_key (slug). Missing players fall back to the initials avatar.
+let playerHeadshots = {};
+
 /* ---- Game mode + seeded RNG (powers the shared Daily board) ---- */
 let currentMode = "casual";            // "casual" | "standard" | "daily" | "nightmare"
 
@@ -1796,11 +1814,20 @@ function archiveDates(){
 /* ---- DOM refs ---- */
 const $ = id => document.getElementById(id);
 const screens = { loading:$("loading"), start:$("start"), decade:$("decade"), game:$("game"), target:$("target"), result:$("result") };
+// Part 1: when the user intentionally returns home, drop any /c/{code} or /r/{code} from the URL
+// so later actions (e.g. opening the Daily leaderboard) can't re-trigger the shared/challenge route.
+function clearRouteToHome(){
+  try{
+    if(location.pathname !== "/" && location.pathname !== ""){
+      history.replaceState(null, "", "/");
+    }
+  }catch(e){}
+}
 function showScreen(name){
   Object.values(screens).forEach(s => s.classList.remove("active"));
   screens[name].classList.add("active");
   window.scrollTo({ top:0, behavior:"smooth" });
-  if(name === "start"){ refreshHome(); }
+  if(name === "start"){ clearRouteToHome(); refreshHome(); }
 }
 
 /* ---- Game state ---- */
@@ -1849,6 +1876,12 @@ async function init(){
     if(!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     buildIndexes(data);
+    // Load the validated headshot mapping. Non-fatal: gameplay must still work if it 404s,
+    // and any unmapped player simply falls back to the initials avatar.
+    try{
+      const hres = await fetch("/player_headshots_validated.json", { cache:"no-store" });
+      if(hres.ok){ playerHeadshots = await hres.json() || {}; }
+    }catch(e){ console.warn("headshot mapping unavailable; using initials fallback", e); }
     // small settle so the spinner isn't a jarring flash
     const challengeCode = getChallengeCodeFromPath();
     const sharedCode = getSharedCodeFromPath();
@@ -1866,43 +1899,79 @@ async function init(){
   }
 }
 
-function buildIndexes(data){
-  // players
-  for(const pid in data.players){
-    const p = data.players[pid];
-    playerNames.set(pid, p.name);
-    playerActive.set(pid, !!p.is_active);
+// Part 2: normalize the new slug-keyed nba_data.json (and the legacy {players,seasons} shape)
+// into a flat array of player-season-team rows. raw_team_abv is audit-only; team_abv drives gameplay.
+function normalizePlayerSeasons(data){
+  if(data && !data.players && !data.seasons){
+    // New shape: { "<slug>": { name, seasons:[ {season_label, team_abv, gp, ppg, ...} ] } }
+    return Object.entries(data).flatMap(([playerKey, player]) =>
+      ((player && player.seasons) || []).map(season => Object.assign(
+        { player_key: playerKey, player_name: player && player.name },
+        season,
+        { ppg: Number(season.ppg), gp: Number(season.gp || 0) }
+      ))
+    ).filter(row =>
+      row.player_name && row.season_label && row.team_abv && Number.isFinite(row.ppg)
+    );
   }
-  // seasons
-  for(const pid in data.seasons){
-    const list = data.seasons[pid];
-    for(let i=0; i<list.length; i++){
-      const s = list[i];
-      const abv = s.team_abv;
-      if(!playersByTeam.has(abv)) playersByTeam.set(abv, new Set());
-      playersByTeam.get(abv).add(pid);
-
-      const key = pid + "|" + abv;
-      if(!seasonsByPlayerTeam.has(key)) seasonsByPlayerTeam.set(key, []);
-      seasonsByPlayerTeam.get(key).push(s);
-
-      if(!teamInfo.has(abv)) teamInfo.set(abv, { id:s.team_id, name:s.team_full_name });
-
-      // year indexes (for Nightmare mode: filter by team AND year)
-      if(!yearsByTeam.has(abv)) yearsByTeam.set(abv, new Set());
-      yearsByTeam.get(abv).add(s.season_label);
-      const yKey = abv + "|" + s.season_label;
-      if(!playersByTeamYear.has(yKey)) playersByTeamYear.set(yKey, new Map());
-      const ym = playersByTeamYear.get(yKey);
-      const prevYM = ym.get(pid);
-      // Change 6: if a player-season is duplicated, keep the fuller (higher-GP) row
-      if(!prevYM || Number(s.gp || 0) > Number(prevYM.gp || 0)) ym.set(pid, s);
+  // Legacy shape: { players:{ pid:{name,is_active} }, seasons:{ pid:[season,...] } }
+  const out = [];
+  const players = (data && data.players) || {};
+  const seasons = (data && data.seasons) || {};
+  for(const pid in seasons){
+    const meta = players[pid] || {};
+    for(const s of seasons[pid]){
+      out.push(Object.assign(
+        { player_key: pid, player_name: meta.name, is_active: !!meta.is_active },
+        s,
+        { ppg: Number(s.ppg), gp: Number(s.gp || 0) }
+      ));
     }
   }
-  // Change 6: collapse duplicate rows for the same player+team+season (e.g. a partial-season
-  // duplicate like Amar'e Stoudemire 2004-05 PHX appearing twice). Keep the fuller (higher-GP)
-  // row. Multi-team seasons live in separate buckets (keyed by team), so a legitimately traded
-  // player keeping the same season label on two different teams is preserved.
+  return out.filter(row =>
+    row.player_name && row.season_label && row.team_abv && Number.isFinite(row.ppg)
+  );
+}
+
+function buildIndexes(data){
+  const rows = normalizePlayerSeasons(data);
+  allPlayerSeasons = rows;
+
+  // Derive "active" from the newest season in the dataset (the new JSON has no is_active flag).
+  let latest = "";
+  for(const r of rows){ if(r.season_label > latest) latest = r.season_label; }
+
+  for(const r of rows){
+    const pid = r.player_key;          // slug (new) or numeric id (legacy) — used as the player identity
+    const abv = r.team_abv;            // gameplay/team filtering uses team_abv, never raw_team_abv
+
+    if(!playerNames.has(pid)) playerNames.set(pid, r.player_name);
+    if(r.is_active === true) playerActive.set(pid, true);
+    else if(r.season_label === latest) playerActive.set(pid, true);
+    else if(!playerActive.has(pid)) playerActive.set(pid, false);
+
+    if(!playersByTeam.has(abv)) playersByTeam.set(abv, new Set());
+    playersByTeam.get(abv).add(pid);
+
+    const key = pid + "|" + abv;
+    if(!seasonsByPlayerTeam.has(key)) seasonsByPlayerTeam.set(key, []);
+    seasonsByPlayerTeam.get(key).push(r);
+
+    if(!teamInfo.has(abv)) teamInfo.set(abv, { id: r.team_id || teamLogoId(abv), name: r.team_full_name });
+
+    if(!yearsByTeam.has(abv)) yearsByTeam.set(abv, new Set());
+    yearsByTeam.get(abv).add(r.season_label);
+    const yKey = abv + "|" + r.season_label;
+    if(!playersByTeamYear.has(yKey)) playersByTeamYear.set(yKey, new Map());
+    const ym = playersByTeamYear.get(yKey);
+    const prevYM = ym.get(pid);
+    // if a player-season is duplicated, keep the fuller (higher-GP) row
+    if(!prevYM || Number(r.gp || 0) > Number(prevYM.gp || 0)) ym.set(pid, r);
+  }
+
+  // Collapse duplicate rows for the same player+team+season, keeping the fuller (higher-GP) row.
+  // Multi-team seasons live in separate buckets (keyed by team), so a player who appears for two
+  // different teams in the same season (e.g. Luka Dončić 2024-25 DAL and LAL) is preserved.
   for(const [key, arr] of seasonsByPlayerTeam){
     const byLabel = new Map();
     for(const s of arr){
@@ -3087,8 +3156,17 @@ function normalizeName(str){
 
 /* ---- Change 5: NBA player headshots (graceful fallback to initials) ---- */
 function playerHeadshotUrl(pick){
-  const id = pick && (pick.pid || pick.player_id || pick.id);
-  return id ? `https://cdn.nba.com/headshots/nba/latest/1040x760/${id}.png` : "";
+  // pick.pid is the player_key (slug) under the new data model — NOT an NBA id.
+  // Resolve the headshot strictly via the validated mapping; unmapped players return ""
+  // so headshotHTML renders the initials avatar (no broken NBA requests, no wrong photos).
+  const key = pick && (pick.pid || pick.player_key);
+  const url = key && playerHeadshots[key] && playerHeadshots[key].headshot_url;
+  if(url) return url;
+  // Legacy fallback: if pick still carries a numeric NBA id directly, honor it.
+  const id = pick && (pick.player_id || pick.id);
+  return (id && /^[0-9]+$/.test(String(id)))
+    ? `https://cdn.nba.com/headshots/nba/latest/1040x760/${id}.png`
+    : "";
 }
 function playerInitials(name){
   const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
